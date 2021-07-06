@@ -73,6 +73,14 @@ instance uhalf_plane_riemann_surface : riemann_surface ℍ := topological_space.
 
 end upper_half_plane
 
+namespace rsphere
+
+def presphere := ℂ ⊕ ℂ
+
+
+
+end rsphere
+
 namespace ctorus
 
 def clattice {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : set ℂ := 

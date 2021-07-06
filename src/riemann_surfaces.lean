@@ -705,60 +705,59 @@ theorem chart_at_origin_of_fun_at
 a ∈ ϕ.to_local_equiv.source ∧ ϕ a = 0 ∧ 
 f a ∈ ψ.to_local_equiv.source ∧ ψ (f a) = 0 ∧
 f '' ϕ.to_local_equiv.source ⊆ ψ.to_local_equiv.source :=
-sorry
--- begin
---   let ϕ₁ := chart_at ℂ a,
---   let ψ₁ := chart_at ℂ (f a),
---   let ϕ₂ := shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a),
---   have ϕ_obv : ϕ₂ = shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a) := rfl,
---   let ψ₂ := shifted_chart_to_local_homeomorph ψ₁ (-ψ₁ (f a)),
---   have ψ_obv : ψ₂ = shifted_chart_to_local_homeomorph ψ₁ (-ψ₁ (f a)) := rfl,
---   let ϕ₃ := ϕ₂.restr (f⁻¹' ψ₂.to_local_equiv.source),
---   have ϕ_obv' : ϕ₃ = ϕ₂.restr (f⁻¹' ψ₂.to_local_equiv.source) := rfl,
---   use [ϕ₃, ψ₂],
---   split,
---   { 
---     rw local_homeomorph.restr_source' ϕ₂ _, 
---     have trivial₀ : a ∈ f⁻¹' ψ₂.to_local_equiv.source := mem_chart_source ℂ (f a),
---     rw [ϕ_obv, shifted_source' ϕ₁ (-ϕ₁ a)],
---     exact ⟨mem_chart_source ℂ a, trivial₀⟩,
---     exact is_open.preimage hf ψ₂.open_source,
---   },
---   {
---     split,
---     {
---       exact calc ϕ₃ a = (ϕ₂.restr (f⁻¹' ψ₂.to_local_equiv.source)) a : by rw ϕ_obv'
---         ... = ϕ₂ a : by rw ϕ₂.restr_apply _
---         ... = shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a) a : by rw ϕ_obv
---         ... = (shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a)).to_local_equiv.to_fun a : by rw ← local_homeomorph.to_fun_eq_coe
---         ... = ϕ₁ a + (-ϕ₁ a) : by rw shifted_to_fun'
---         ... = 0 : by ring,
---     },
---     {
---       split,
---       {
---         rw [ψ_obv, shifted_source'],
---         exact mem_chart_source ℂ (f a),
---       },
---       {
---         split,
---         {
---           exact calc ψ₂ (f a) = (shifted_chart_to_local_homeomorph ψ₁ $ -ψ₁ (f a)) (f a) : by rw ψ_obv
---             ... = (shifted_chart_to_local_homeomorph ψ₁ $ -ψ₁ (f a)).to_local_equiv.to_fun (f a) : by rw ← local_homeomorph.to_fun_eq_coe
---             ... = ψ₁ (f a) + (-ψ₁ (f a)) : by rw shifted_to_fun'
---             ... = 0 : by ring,
---         },
---         {
---           intros v hv,
---           rw local_homeomorph.restr_source' _ _ (is_open.preimage hf ψ₂.open_source) at hv,
---           rcases hv with ⟨v', hv'⟩,
---           rw ← hv'.2,
---           exact hv'.1.2,
---         },
---       },
---     },
---   },
--- end
+begin
+  let ϕ₁ := chart_at ℂ a,
+  let ψ₁ := chart_at ℂ (f a),
+  let ϕ₂ := shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a),
+  have ϕ_obv : ϕ₂ = shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a) := rfl,
+  let ψ₂ := shifted_chart_to_local_homeomorph ψ₁ (-ψ₁ (f a)),
+  have ψ_obv : ψ₂ = shifted_chart_to_local_homeomorph ψ₁ (-ψ₁ (f a)) := rfl,
+  let ϕ₃ := ϕ₂.restr (f⁻¹' ψ₂.to_local_equiv.source),
+  have ϕ_obv' : ϕ₃ = ϕ₂.restr (f⁻¹' ψ₂.to_local_equiv.source) := rfl,
+  use [ϕ₃, ψ₂],
+  split,
+  { 
+    rw local_homeomorph.restr_source' ϕ₂ _, 
+    have trivial₀ : a ∈ f⁻¹' ψ₂.to_local_equiv.source := mem_chart_source ℂ (f a),
+    rw [ϕ_obv, shifted_source' ϕ₁ (-ϕ₁ a)],
+    exact ⟨mem_chart_source ℂ a, trivial₀⟩,
+    exact is_open.preimage hf ψ₂.open_source,
+  },
+  {
+    split,
+    {
+      exact calc ϕ₃ a = (ϕ₂.restr (f⁻¹' ψ₂.to_local_equiv.source)) a : by rw ϕ_obv'
+        ... = ϕ₂ a : by rw ϕ₂.restr_apply _
+        ... = shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a) a : by rw ϕ_obv
+        ... = (shifted_chart_to_local_homeomorph ϕ₁ (-ϕ₁ a)).to_local_equiv.to_fun a : by rw ← local_homeomorph.to_fun_eq_coe
+        ... = ϕ₁ a + (-ϕ₁ a) : by rw shifted_to_fun'
+        ... = 0 : by ring,
+    },
+    {
+      split,
+      {
+        rw [ψ_obv, shifted_source'],
+        exact mem_chart_source ℂ (f a),
+      },
+      {
+        split,
+        {
+          exact calc ψ₂ (f a) = (shifted_chart_to_local_homeomorph ψ₁ $ -ψ₁ (f a)) (f a) : by rw ψ_obv
+            ... = (shifted_chart_to_local_homeomorph ψ₁ $ -ψ₁ (f a)).to_local_equiv.to_fun (f a) : by rw ← local_homeomorph.to_fun_eq_coe
+            ... = ψ₁ (f a) + (-ψ₁ (f a)) : by rw shifted_to_fun'
+            ... = 0 : by ring,
+        },
+        {
+          intros v hv,
+          rw local_homeomorph.restr_source' _ _ (is_open.preimage hf ψ₂.open_source) at hv,
+          rcases hv with ⟨v', hv'⟩,
+          rw ← hv'.2,
+          exact hv'.1.2,
+        },
+      },
+    },
+  },
+end
 
 theorem local_behavior_of_mholomorph
 {f : X → Y} (hf : mholomorph f) (a : X) 

@@ -117,7 +117,6 @@ lemma accumulation_pt_of_mem_open_nondiscrete
 {U : set X} (hU : is_open U) {z : X} (hz : z ∈ U) :
 accumulation_pt X U z := 
 begin
-  -- have : ¬ U = {z} := by_contra (λ h, ht z $ (not_not.mp h) ▸ hU),
   let ht := crowded_space.def X,
   intros V hV,
   rw is_open_iff_forall_mem_open at hU,
