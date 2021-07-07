@@ -90,6 +90,20 @@ def rsphere_gluing : setoid prersphere :=
 
 end rsphere
 
+namespace extended_upper_half_plane
+
+inductive uhalf_and_cusps
+| of_complex (z : ℂ) (hz : 0 < z.im) : uhalf_and_cusps
+| of_rational (r : ℚ) : uhalf_and_cusps
+| of_infinity : uhalf_and_cusps
+
+/-
+  TODO:
+  has_one has_zero has_add has_mul topological_sapce
+-/
+
+end extended_upper_half_plane
+
 namespace ctorus
 
 def clattice {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : set ℂ := 
