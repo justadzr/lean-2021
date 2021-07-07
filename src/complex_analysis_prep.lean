@@ -1,3 +1,4 @@
+--- Will clean up these imports
 import tactic
 import analysis.calculus.iterated_deriv
 import topology.continuous_function.polynomial
@@ -20,14 +21,7 @@ open_locale topological_space classical nnreal asymptotics filter ennreal unit_i
 
 noncomputable theory
 
-/--
-structure complex_curve (a b : ℝ) [fact (a < b)] (γ : ℝ → ℂ) :=
-(real_diff : times_cont_diff_on ℝ 1 (λ (x : ℝ), (γ x).re) (Icc a b))
-(img_diff : times_cont_diff_on ℝ 1 (λ (x : ℝ), (γ x).im) (Icc a b))
-
-def derivative_curve (a b : ℝ) [fact (a < b)] (γ : ℝ → ℂ) (x : ℝ) : ℝ →L[ℝ] ℂ := 
-fderiv ℝ (λ (x : ℝ), (γ x).re) x + complex.I * (fderiv ℝ (λ (x : ℝ), (γ x).im) x)
---/
+--- Some assumptions
 
 theorem holomorph_analytic (f : ℂ → ℂ) (z : ℂ) : differentiable_at ℂ f z ↔ analytic_at ℂ f z :=
 sorry
@@ -43,8 +37,9 @@ sorry
 
 section accuml_pts
 
-def isolated_pt (X : Type*) [topological_space X] (U : set X) (z : X) : Prop :=
-∃ (V : set X), is_open V ∧ U ∩ (V \ {z}) = ∅
+--- Need this?
+--- def isolated_pt (X : Type*) [topological_space X] (U : set X) (z : X) : Prop :=
+--- ∃ (V : set X), is_open V ∧ U ∩ (V \ {z}) = ∅
 
 def accumulation_pt (X : Type*) [topological_space X] (U : set X) (z : X) : Prop :=
 ∀ (V : set X), V ∈ (𝓝 z) → ∃ (v : X), v ∈ U ∩ V ∧ ¬ v = z
@@ -274,9 +269,6 @@ end accuml_pts_homeomorph
 
 section complex_theorems
 
--- theorem finite_order_of_zero
--- {f : ℂ → ℂ} (hf : differentiable_on ℂ f s)
-
 theorem identity_theorem
 {f : ℂ → ℂ} {g : ℂ → ℂ}
 {U : set ℂ} (hU₁ : is_open U) (hU₂ : is_connected U)
@@ -304,496 +296,502 @@ sorry
 
 end complex_theorems
 
--- lemma nonvanishing_has_local_expansion
--- (ε : ℝ) {hε : ε > 0}
--- (f : ℂ → ℂ)
--- (w : ℂ)
--- {hf₁ : ∃ (z : ℂ), z ∈ ball w ε ∧ ¬f z = 0}
--- {hf₂ : ∀ (z : ℂ), z ∈ ball w ε  → analytic_at ℂ f z} {hf₂ : f w = 0}:
--- ∃ (k : ℕ) (r : ℝ) (g : ℂ → ℂ),
--- k > 0 ∧ r ≤ ε ∧ 0 < r ∧
--- ∀ (x : ℂ), x ∈ ball w r → f = (λ x, ((x - w) ^ k) * g x)
--- ∧ ¬ g x = 0 ∧ analytic_at ℂ g x:=
--- sorry
+/-
+  Trash codes. A bad attempt to prove the identity theorem only assuming 
+-/
 
--- -- I cannot prove the following theorem neatly. I tried to prove it with some disguting inductions,
--- -- but Lean's treatments of derivatives are not quite nice in this case. Maybe using g's expansion
--- -- would be easier. But again, that requires at least one induction.
--- lemma nonvanishing_iter_deriv_of_nonvanishing
--- (f : ℂ → ℂ)
--- (w : ℂ)
--- {hf : analytic_at ℂ f w}:
--- (∃ (k : ℕ),
--- ¬ iterated_deriv k f w = 0)
--- ↔ (∃ (ε : ℝ), 0 < ε ∧ (∀ (z : ℂ), z ∈ ball w ε → analytic_at ℂ f z) 
--- ∧ (∃ (z : ℂ), z ∈ ball w ε ∧ ¬f z = 0)) := 
--- sorry
+/-
+lemma nonvanishing_has_local_expansion
+(ε : ℝ) {hε : ε > 0}
+(f : ℂ → ℂ)
+(w : ℂ)
+{hf₁ : ∃ (z : ℂ), z ∈ ball w ε ∧ ¬f z = 0}
+{hf₂ : ∀ (z : ℂ), z ∈ ball w ε  → analytic_at ℂ f z} {hf₂ : f w = 0}:
+∃ (k : ℕ) (r : ℝ) (g : ℂ → ℂ),
+k > 0 ∧ r ≤ ε ∧ 0 < r ∧
+∀ (x : ℂ), x ∈ ball w r → f = (λ x, ((x - w) ^ k) * g x)
+∧ ¬ g x = 0 ∧ analytic_at ℂ g x:=
+sorry
 
--- lemma nonvanishing_disk_of_continuous
--- (f : ℂ → ℂ)
--- (z : ℂ) {hf₁ : continuous_at f z} {hf₂ : ¬ f z = 0}:
--- ∃ (ε : ℝ),
--- 0 < ε ∧ ∀ (x : ℂ), x ∈ ball z ε → ¬ f x = 0 :=
--- begin
---   have := hf₁,
---   rw continuous_at_iff at this,
---     let ε' := ∥f z∥ / 2,
---     rw [← ne.def, ← norm_pos_iff] at hf₂,
---     have hε' : 0 < ∥f z∥ / 2 := by linarith,
---     rcases this ε' hε' with ⟨δ, hδ, h⟩,
---     use min ε' δ,
---     split,
---     simp,
---     exact ⟨hε', hδ⟩,
---     {
---       intros x hx,
---       rw [mem_ball', dist_comm] at hx,
---       have lt_δ : dist x z < δ := lt_of_lt_of_le hx (min_le_right _ _),
---       specialize h lt_δ,
---       rw [dist_eq_norm, norm_sub_rev] at h,
---       have key : 0 < ∥f x∥ :=
---         calc ∥f x∥ = ∥f z - (f z - f x)∥ : by simp
---         ... ≥ ∥f z∥ - ∥f z - f x∥ : norm_sub_norm_le _ _
---         ... ≥ ∥f z∥ - ε' : begin simp, apply le_of_lt, exact h, end
---         ... ≥ ∥f z∥ - ∥f z∥ / 2 : begin simp, apply le_of_eq, rw ← norm_eq_abs, end
---         ... = ∥f z∥ / 2 : by linarith
---         ... > 0 : hε',
---       rw [norm_pos_iff] at key,
---       exact key,
---     },
--- end
+-- I cannot prove the following theorem neatly. I tried to prove it with some disguting inductions,
+-- but Lean's treatments of derivatives are not quite nice in this case. Maybe using g's expansion
+-- would be easier. But again, that requires at least one induction.
+lemma nonvanishing_iter_deriv_of_nonvanishing
+(f : ℂ → ℂ)
+(w : ℂ)
+{hf : analytic_at ℂ f w}:
+(∃ (k : ℕ),
+¬ iterated_deriv k f w = 0)
+↔ (∃ (ε : ℝ), 0 < ε ∧ (∀ (z : ℂ), z ∈ ball w ε → analytic_at ℂ f z) 
+∧ (∃ (z : ℂ), z ∈ ball w ε ∧ ¬f z = 0)) := 
+sorry
 
--- lemma is_open_nonvanishing_of_continuous
--- (f : ℂ → ℂ)
--- (U : set ℂ) {hU : is_open U}
--- {hf : ∀ (z : ℂ), z ∈ U → continuous_at f z} : 
--- is_open {z : ℂ | z ∈ U ∧ ¬ f z = 0} :=
--- begin
---   rw metric.is_open_iff at *,
---   dsimp,
---   intros z hz,
---   rcases hz with ⟨hz₁, hz₂⟩,
---   specialize hU z hz₁,
---   specialize hf z hz₁,
---   rcases hU with ⟨δ, hδ₁, hδ₂⟩,
---   rcases nonvanishing_disk_of_continuous f z with ⟨ε, hε₁, hε₂⟩,
---   assumption',
---   use min δ ε,
---   split,
---   simp at hδ₁,
---   exact lt_min hδ₁ hε₁,
---   rw subset_def,
---   dsimp,
---   intros x hx,
---   have key₁ : x ∈ U := hδ₂ ((ball_subset_ball $ min_le_left δ ε) hx),
---   have key₂ : ¬ f x = 0 := hε₂ x ((ball_subset_ball $ min_le_right δ ε) hx),
---   exact ⟨key₁, key₂⟩,
--- end
+lemma nonvanishing_disk_of_continuous
+(f : ℂ → ℂ)
+(z : ℂ) {hf₁ : continuous_at f z} {hf₂ : ¬ f z = 0}:
+∃ (ε : ℝ),
+0 < ε ∧ ∀ (x : ℂ), x ∈ ball z ε → ¬ f x = 0 :=
+begin
+  have := hf₁,
+  rw continuous_at_iff at this,
+    let ε' := ∥f z∥ / 2,
+    rw [← ne.def, ← norm_pos_iff] at hf₂,
+    have hε' : 0 < ∥f z∥ / 2 := by linarith,
+    rcases this ε' hε' with ⟨δ, hδ, h⟩,
+    use min ε' δ,
+    split,
+    simp,
+    exact ⟨hε', hδ⟩,
+    {
+      intros x hx,
+      rw [mem_ball', dist_comm] at hx,
+      have lt_δ : dist x z < δ := lt_of_lt_of_le hx (min_le_right _ _),
+      specialize h lt_δ,
+      rw [dist_eq_norm, norm_sub_rev] at h,
+      have key : 0 < ∥f x∥ :=
+        calc ∥f x∥ = ∥f z - (f z - f x)∥ : by simp
+        ... ≥ ∥f z∥ - ∥f z - f x∥ : norm_sub_norm_le _ _
+        ... ≥ ∥f z∥ - ε' : begin simp, apply le_of_lt, exact h, end
+        ... ≥ ∥f z∥ - ∥f z∥ / 2 : begin simp, apply le_of_eq, rw ← norm_eq_abs, end
+        ... = ∥f z∥ / 2 : by linarith
+        ... > 0 : hε',
+      rw [norm_pos_iff] at key,
+      exact key,
+    },
+end
 
--- lemma isolated_zeros_of_nonvanishing
--- (ε : ℝ) {hε : ε > 0}
--- (f : ℂ → ℂ)
--- (w : ℂ)
--- {hf₁ : ∃ (z : ℂ), z ∈ ball w ε ∧ ¬f z = 0} 
--- {hf₂ : ∀ (z : ℂ), z ∈ ball w ε  → analytic_at ℂ f z}:
--- ∃ (r : ℝ),
--- r ≤ ε ∧ 0 < r ∧
--- ∀ (x : ℂ), x ∈ ball w r → ¬ x - w = 0 → ¬ f x = 0:=
--- begin
---   by_cases (f w = 0),
---   -- the case where f w = 0; use f's local expansion around w
---   {
---     rcases nonvanishing_has_local_expansion ε f w with ⟨k, r, g, H⟩,
---     rcases H with ⟨H₁, H₂, H₃, H₄⟩,
---     use r,
---     split,
---     exact H₂,
---     {
---       split,
---       exact H₃,
---       {
---         intros x hx₁ hx₂,
---         by_contra h',
---         specialize H₄ x hx₁,
---         rcases H₄ with ⟨h₂₁, h₂₂, h₂₃⟩,
---         rw h₂₁ at h',
---         have key : (x - w) ^ k = 0 ∨ g x = 0 := eq_zero_or_eq_zero_of_mul_eq_zero h',
---         cases key with key₁ key₂,
---         {
---           rw [← complex.cpow_nat_cast, complex.cpow_eq_zero_iff] at key₁,
---           exact hx₂ key₁.1,
---         },
---         {
---           exact h₂₂ key₂,
---         },
---       },
---     },
---     assumption',
---   },
---   -- the case where f w ≠ 0; use the continuity of f at w
---   {
---     specialize hf₂ w (mem_ball_self hε),
---     rcases nonvanishing_disk_of_continuous f w with ⟨r, hr⟩,
---     assumption',
---     use min r ε,
---     split,
---     exact min_le_right _ _,
---     split,
---     {
---       simp,
---       exact ⟨hr.1, hε⟩,
---     },
---     {
---       intros x hx₁ hx₂,
---       rw [mem_ball'] at hx₁,
---       have key : dist w x < r := lt_of_lt_of_le hx₁ (min_le_left _ _),
---       rw [← mem_ball'] at key,
---       exact hr.2 x key,
---     },
---     exact analytic_at.continuous_at hf₂,
---   },
--- end
+lemma is_open_nonvanishing_of_continuous
+(f : ℂ → ℂ)
+(U : set ℂ) {hU : is_open U}
+{hf : ∀ (z : ℂ), z ∈ U → continuous_at f z} : 
+is_open {z : ℂ | z ∈ U ∧ ¬ f z = 0} :=
+begin
+  rw metric.is_open_iff at *,
+  dsimp,
+  intros z hz,
+  rcases hz with ⟨hz₁, hz₂⟩,
+  specialize hU z hz₁,
+  specialize hf z hz₁,
+  rcases hU with ⟨δ, hδ₁, hδ₂⟩,
+  rcases nonvanishing_disk_of_continuous f z with ⟨ε, hε₁, hε₂⟩,
+  assumption',
+  use min δ ε,
+  split,
+  simp at hδ₁,
+  exact lt_min hδ₁ hε₁,
+  rw subset_def,
+  dsimp,
+  intros x hx,
+  have key₁ : x ∈ U := hδ₂ ((ball_subset_ball $ min_le_left δ ε) hx),
+  have key₂ : ¬ f x = 0 := hε₂ x ((ball_subset_ball $ min_le_right δ ε) hx),
+  exact ⟨key₁, key₂⟩,
+end
 
--- def is_accumulation_point (U : set ℂ) (z : ℂ) : Prop :=
--- ∀ (V : set ℂ), V ∈ (𝓝 z) → ∃ (v : ℂ), v ∈ U ∩ V ∧ ¬ v - z = 0
+lemma isolated_zeros_of_nonvanishing
+(ε : ℝ) {hε : ε > 0}
+(f : ℂ → ℂ)
+(w : ℂ)
+{hf₁ : ∃ (z : ℂ), z ∈ ball w ε ∧ ¬f z = 0} 
+{hf₂ : ∀ (z : ℂ), z ∈ ball w ε  → analytic_at ℂ f z}:
+∃ (r : ℝ),
+r ≤ ε ∧ 0 < r ∧
+∀ (x : ℂ), x ∈ ball w r → ¬ x - w = 0 → ¬ f x = 0:=
+begin
+  by_cases (f w = 0),
+  -- the case where f w = 0; use f's local expansion around w
+  {
+    rcases nonvanishing_has_local_expansion ε f w with ⟨k, r, g, H⟩,
+    rcases H with ⟨H₁, H₂, H₃, H₄⟩,
+    use r,
+    split,
+    exact H₂,
+    {
+      split,
+      exact H₃,
+      {
+        intros x hx₁ hx₂,
+        by_contra h',
+        specialize H₄ x hx₁,
+        rcases H₄ with ⟨h₂₁, h₂₂, h₂₃⟩,
+        rw h₂₁ at h',
+        have key : (x - w) ^ k = 0 ∨ g x = 0 := eq_zero_or_eq_zero_of_mul_eq_zero h',
+        cases key with key₁ key₂,
+        {
+          rw [← complex.cpow_nat_cast, complex.cpow_eq_zero_iff] at key₁,
+          exact hx₂ key₁.1,
+        },
+        {
+          exact h₂₂ key₂,
+        },
+      },
+    },
+    assumption',
+  },
+  -- the case where f w ≠ 0; use the continuity of f at w
+  {
+    specialize hf₂ w (mem_ball_self hε),
+    rcases nonvanishing_disk_of_continuous f w with ⟨r, hr⟩,
+    assumption',
+    use min r ε,
+    split,
+    exact min_le_right _ _,
+    split,
+    {
+      simp,
+      exact ⟨hr.1, hε⟩,
+    },
+    {
+      intros x hx₁ hx₂,
+      rw [mem_ball'] at hx₁,
+      have key : dist w x < r := lt_of_lt_of_le hx₁ (min_le_left _ _),
+      rw [← mem_ball'] at key,
+      exact hr.2 x key,
+    },
+    exact analytic_at.continuous_at hf₂,
+  },
+end
 
--- lemma vanishing_disk_of_accumulation_point
--- (U : set ℂ) {hU : is_open U}
--- (f : ℂ → ℂ) {hf : ∀ (z : ℂ), z ∈ U → analytic_at ℂ f z}
--- (s₀ : ℂ) 
--- {hs₀ : is_accumulation_point {s : ℂ | f s = 0 ∧ s ∈ U} s₀} 
--- {hs₀' : s₀ ∈ {s : ℂ | f s = 0 ∧ s ∈ U}}:
--- ∃ (ε : ℝ), 0 < ε ∧ ball s₀ ε ⊆ U ∧
--- ∀ (z : ℂ), z ∈ ball s₀ ε → f z = 0 :=
--- begin
---   by_contra w,
---   simp only [not_exists, not_and] at w,
---   dsimp at hs₀',
---   rw metric.is_open_iff at hU,
---   specialize hU s₀ hs₀'.2,
---   rcases hU with ⟨ε, hε₁, hε₂⟩,
---   specialize w ε hε₁ hε₂,
---   simp only [not_forall] at w,
---   rcases w with ⟨z, hz₁, hz₂⟩,
---   have hf₁ : ∃ (z : ℂ), z ∈ ball s₀ ε ∧ ¬f z = 0 := ⟨z, ⟨hz₁, hz₂⟩⟩,
---   have hf₂ : ∀ (x : ℂ), x ∈ ball s₀ ε → analytic_at ℂ f x := λ x hx, hf x $ hε₂ hx,
---   rcases isolated_zeros_of_nonvanishing ε f s₀ with ⟨r, hr₁, hr₂, hr₃⟩,
---   assumption',
---   have : ∃ (v : ℂ), v ∈ {s : ℂ | f s = 0 ∧ s ∈ U} ∩ (ball s₀ r) ∧ ¬ v - s₀ = 0 := 
---     hs₀ (ball s₀ r) (ball_mem_nhds s₀ hr₂),
---   rcases this with ⟨v, hv₁, hv₂⟩,
---   dsimp at hv₁,
---   show false, from (hr₃ v hv₁.2 hv₂) hv₁.1.1,
--- end
+def is_accumulation_point (U : set ℂ) (z : ℂ) : Prop :=
+∀ (V : set ℂ), V ∈ (𝓝 z) → ∃ (v : ℂ), v ∈ U ∩ V ∧ ¬ v - z = 0
 
--- theorem vanishing_if_zeros_accumulate
--- (U : set ℂ) {hU₁ : is_open U} {hU₂ : is_connected U}
--- (f : ℂ → ℂ) {hf : ∀ (z : ℂ), z ∈ U → analytic_at ℂ f z}
--- (s₀ : ℂ)
--- {hs₀ : is_accumulation_point {s : ℂ | f s = 0 ∧ s ∈ U} s₀} 
--- {hs₀' : s₀ ∈ {s : ℂ | f s = 0 ∧ s ∈ U}}:
--- ∀ (z : ℂ), z ∈ U → f z = 0:=
--- begin
---   let U₁ : set ℂ := {z : ℂ | z ∈ U ∧ ∃ (r : ℝ), 0 < r ∧ ball z r ⊆ U ∧ ∀ (x : ℂ), x ∈ ball z r → f x = 0},
---   let U₂ : set ℂ := {z : ℂ | z ∈ U ∧ ∃ (k : ℕ), ¬ iterated_deriv k f z = 0},
---   have h₁ : U₁ ∪ U₂ = U :=
---   begin
---     ext,
---     split,
---     {
---       intro h,
---       dsimp at h,
---       cases h with H₁ H₂,
---       exact H₁.1,
---       exact H₂.1,
---     },
---     {
---       intro H,
---       by_cases (x ∈ U₂),
---       exact (mem_union_right U₁) h,
---       {
---         by_cases h' : f x = 0,
---         {
---           have key : is_accumulation_point {s : ℂ | f s = 0 ∧ s ∈ U} x ∧ x ∈ {s : ℂ | f s = 0 ∧ s ∈ U}:=
---           begin
---             by_contradiction w,
---             rw not_and_distrib at w,
---             cases w with w₁ w₂,
---             {
---               -- sorry,
---               unfold is_accumulation_point at w₁,
---               simp at w₁,
---               rcases w₁ with ⟨U', hU₁', hU₂'⟩,
---               rw metric.mem_nhds_iff at hU₁',
---               rcases hU₁' with ⟨r, hr₁, hr₂⟩,
---               let U'' : set ℂ := ball x r ∩ U,
---               have key₁ : is_open U'' := is_open.inter metric.is_open_ball hU₁,
---               rw metric.is_open_iff at key₁,
---               specialize key₁ x (mem_inter (mem_ball_self hr₁) H),
---               rcases key₁ with ⟨ε, hε₁, hε₂⟩,
---               let x' : ℂ := x + ε / 2,
---               have key₂ : x' ∈ ball x ε := 
---               begin 
---                 simp,
---                 have : 0 ≤ ε / 2 := by linarith,
---                 exact calc dist x' x = ∥(x + ε / 2) - x∥ : by rw dist_eq_norm
---                   ... = complex.abs ↑(ε / 2) : by simp
---                   ... = ε / 2 : by rw complex.abs_of_nonneg this
---                   ... < ε : by linarith,
---               end,
---               have key₃ : ¬ f x' = 0 :=
---               begin
---                 by_contra w',
---                 have : x' ∈ U'' := hε₂ key₂,
---                 simp only [mem_inter_eq] at this,
---                 specialize hU₂' x' w' this.2 (hr₂ this.1),
---                 have key : ¬ x' - x = 0 := begin
---                   simp,
---                   exact ne_of_gt hε₁,
---                 end,
---                 show false, from key hU₂',
---               end,
---               have : ∃ (ε : ℝ), ε > 0 ∧ (∀ (z : ℂ), z ∈ ball x ε → analytic_at ℂ f z) ∧ ∃ (z : ℂ), z ∈ ball x ε ∧ ¬f z = 0 :=
---               begin
---                 use ε,
---                 split,
---                 exact hε₁,
---                 split,
---                 intros z hz, 
---                 exact hf z (mem_of_mem_inter_right (hε₂ hz)),
---                 exact ⟨x', ⟨key₂, key₃⟩⟩,
---               end,
---               have key₄ : x ∈ U₂ :=
---               begin
---                 dsimp,
---                 split,
---                 exact H,
---                 rcases iff.elim_right (nonvanishing_iter_deriv_of_nonvanishing f x) this with ⟨k, hk⟩,
---                 use k,
---                 exact hf x H,
---               end, 
---               show false, from h key₄,
---             },
---             {
---               simp at w₂,
---               show false, from (w₂ h') H,
---             },
---           end,
---           rcases vanishing_disk_of_accumulation_point U f x with ⟨ε, hε₁, hε₂, hε₃⟩,
---           assumption',
---           have : x ∈ U₁ :=
---           begin
---             dsimp [U₁],
---             split,
---             exact H,
---             {
---               use ε,
---               exact ⟨hε₁, ⟨hε₂, hε₃⟩⟩,
---             },
---           end,
---           exact (mem_union_left U₂) this,
---           exact key.1,
---           exact key.2,
---         },
---         {
---           have key₁ : ∃ (k : ℕ), ¬ iterated_deriv k f x = 0 := by use 0,
---           have key₂ : x ∈ U₂ := begin
---             simp,
---             exact ⟨H, key₁⟩,
---           end,
---           exfalso,
---           exact h key₂,
---         },
---       },
---     },  
---   end,
---   have h₂ : U₁ ∩ U₂ = ∅ :=
---   begin
---     by_contra,
---     rw [← ne.def, ne_empty_iff_nonempty, nonempty_def] at h,
---     rcases h with ⟨x, hx⟩,
---     dsimp at hx,
---     rcases iff.elim_left (nonvanishing_iter_deriv_of_nonvanishing f x) hx.2.2 with ⟨ε, hε₁, hε₂, hε₃⟩,
---     rcases isolated_zeros_of_nonvanishing ε f x with ⟨r, hr₁, hr₂, hr₃⟩,
---     assumption',
---     swap,
---     exact hf x hx.1.1,
---     rcases hx.1.2 with ⟨r', hr₁', hr₂', hr₃'⟩,
---     let r'' : ℝ := min r r',
---     have minor₁ : 0 < r'' := 
---     begin
---       rw lt_min_iff,
---       exact ⟨hr₂, gt.lt hr₁'⟩,
---     end,
---     have minor₂ : ∃ (x' : ℂ), x' ∈ ball x r'' ∧ ¬ x' - x = 0 := 
---     begin
---       let x' : ℂ := x + r'' / 2,
---       use x',
---       split,
---       simp only [metric.mem_ball],
---       have : 0 ≤ r'' / 2 := by linarith,
---       exact calc dist x' x = ∥(x + r'' / 2) - x∥ : by rw dist_eq_norm
---         ... = complex.abs ↑(r'' / 2) : by simp
---         ... = r'' / 2 : by rw complex.abs_of_nonneg this
---         ... < r'' : by linarith,
---       simp,
---       exact ne_of_gt minor₁,
---     end,
---     rcases minor₂ with ⟨x', hx₁', hx₂'⟩,
---     have key₁ : f x' = 0 := hr₃' x' ((ball_subset_ball (min_le_right r r')) hx₁'),
---     have key₂ : ¬ f x' = 0 := hr₃ x' ((ball_subset_ball (min_le_left r r')) hx₁') hx₂',
---     show false, from key₂ key₁,
---   end,
---   have h₃ : is_open U₁ :=
---   begin
---     rw metric.is_open_iff,
---     intros x hx,
---     dsimp at hx,
---     rcases hx with ⟨hx₁, ε, hε₁, hε₂, hε₃⟩,
---     use ε,
---     split,
---     exact hε₁,
---     intros z hz,
---     dsimp,
---     split,
---     exact hε₂ hz,
---     have : ∃ (r : ℝ), (0 < r ∧ ball z r ⊆ U) ∧ ball z r ⊆ ball x ε :=
---     begin
---       have key : is_open (ball x ε) := is_open_ball,
---       rw metric.is_open_iff at key,
---       specialize key z hz,
---       rcases key with ⟨r, hr₁, hr₂⟩,
---       use r,
---       split,
---       exact ⟨hr₁, subset.trans hr₂ hε₂⟩,
---       exact hr₂,
---     end,
---     rcases this with ⟨r, hr₁, hr₂⟩,
---     use r,
---     split,
---     exact hr₁.1,
---     split,
---     exact hr₁.2,
---     intros x' hx',
---     exact hε₃ x' (hr₂ hx'),
---   end,
---   have h₄ : is_open U₂ :=
---   begin
---     sorry,   
---   end,
---   have h₅ : U₁.nonempty :=
---   begin
---     rw nonempty_def,
---     use s₀,
---     dsimp,
---     simp at hs₀',
---     split,
---     exact hs₀'.2,
---     rcases vanishing_disk_of_accumulation_point U f s₀ with ⟨ε, hε₁, hε₂, hε₃⟩,
---     assumption',
---     use ε,
---     exact ⟨hε₁, ⟨hε₂, hε₃⟩⟩,
---   end,
---   have hfinal : U₁ = U :=
---   begin
---     have : is_preconnected U := is_connected.is_preconnected hU₂,
---     rw is_preconnected_iff_subset_of_disjoint at this,
---     specialize this U₁ U₂ h₃ h₄ (eq.subset (eq.symm h₁)),
---     have minor : U ∩ (U₁ ∩ U₂) = ∅ := 
---     begin
---       rw h₂,
---       simp,
---     end,
---     specialize this minor,
---     cases this,
---     {
---       have minor' : U₁ ⊆ U :=
---       begin
---         let h := set.subset_union_left U₁ U₂,
---         rw h₁ at h,
---         exact h,
---       end,
---       exact has_subset.subset.antisymm minor' this,
---     },
---     {
---       have minor₁ : U₁ ⊆ U :=
---       begin
---         let h := set.subset_union_left U₁ U₂,
---         rw h₁ at h,
---         exact h,
---       end,
---       have minor₂ : U₂ ⊆ U :=
---       begin
---         let h := set.subset_union_right U₁ U₂,
---         rw h₁ at h,
---         exact h,
---       end,
---       have minor₃ : U₂ = U := has_subset.subset.antisymm minor₂ this,
---       have key : U₁ = ∅ :=
---       begin
---         rw [inter_comm, ← set.subset_empty_iff, ← set.diff_eq_self] at h₂,
---         rw ← h₂,
---         by_contra w,
---         rw [← ne.def, set.ne_empty_iff_nonempty, set.nonempty_diff, minor₃] at w,
---         show false, from w minor₁,
---       end,
---       rw [← set.not_nonempty_iff_eq_empty] at key,
---       exfalso,
---       exact key h₅,
---     },
---   end,
---   intros z hz,
---   have : z ∈ U₁ := (eq.subset (eq.symm hfinal)) hz,
---   dsimp at this,
---   rcases this.2 with ⟨r, hr₁, hr₂, hr₃⟩,
---   specialize hr₃ z (mem_ball_self hr₁),
---   exact hr₃,
--- end
+lemma vanishing_disk_of_accumulation_point
+(U : set ℂ) {hU : is_open U}
+(f : ℂ → ℂ) {hf : ∀ (z : ℂ), z ∈ U → analytic_at ℂ f z}
+(s₀ : ℂ) 
+{hs₀ : is_accumulation_point {s : ℂ | f s = 0 ∧ s ∈ U} s₀} 
+{hs₀' : s₀ ∈ {s : ℂ | f s = 0 ∧ s ∈ U}}:
+∃ (ε : ℝ), 0 < ε ∧ ball s₀ ε ⊆ U ∧
+∀ (z : ℂ), z ∈ ball s₀ ε → f z = 0 :=
+begin
+  by_contra w,
+  simp only [not_exists, not_and] at w,
+  dsimp at hs₀',
+  rw metric.is_open_iff at hU,
+  specialize hU s₀ hs₀'.2,
+  rcases hU with ⟨ε, hε₁, hε₂⟩,
+  specialize w ε hε₁ hε₂,
+  simp only [not_forall] at w,
+  rcases w with ⟨z, hz₁, hz₂⟩,
+  have hf₁ : ∃ (z : ℂ), z ∈ ball s₀ ε ∧ ¬f z = 0 := ⟨z, ⟨hz₁, hz₂⟩⟩,
+  have hf₂ : ∀ (x : ℂ), x ∈ ball s₀ ε → analytic_at ℂ f x := λ x hx, hf x $ hε₂ hx,
+  rcases isolated_zeros_of_nonvanishing ε f s₀ with ⟨r, hr₁, hr₂, hr₃⟩,
+  assumption',
+  have : ∃ (v : ℂ), v ∈ {s : ℂ | f s = 0 ∧ s ∈ U} ∩ (ball s₀ r) ∧ ¬ v - s₀ = 0 := 
+    hs₀ (ball s₀ r) (ball_mem_nhds s₀ hr₂),
+  rcases this with ⟨v, hv₁, hv₂⟩,
+  dsimp at hv₁,
+  show false, from (hr₃ v hv₁.2 hv₂) hv₁.1.1,
+end
 
--- theorem eq_if_eq_points_accumulate
--- (U : set ℂ) {hU₁ : is_open U} {hU₂ : is_connected U}
--- (f : ℂ → ℂ) {hf : ∀ (z : ℂ), z ∈ U → analytic_at ℂ f z}
--- (g : ℂ → ℂ) {hg : ∀ (z : ℂ), z ∈ U → analytic_at ℂ g z}
--- (s₀ : ℂ)
--- {hs₀ : is_accumulation_point {s : ℂ | f s = g s ∧ s ∈ U} s₀} 
--- {hs₀' : s₀ ∈ {s : ℂ | f s = g s ∧ s ∈ U}} :
--- ∀ (z : ℂ), z ∈ U → f z = g z :=
--- begin
---   let h : ℂ → ℂ := f - g,
---   have minor : ∀ (z : ℂ), z ∈ U → analytic_at ℂ h z := λ z hz, analytic_at.sub (hf z hz) $ hg z hz,
---   have key : {s : ℂ | f s = g s ∧ s ∈ U} = {s : ℂ | h s = 0 ∧ s ∈ U} :=
---   begin
---     ext,
---     split,
---     { 
---       intros hx, 
---       dsimp at hx, 
---       simp, split,
---       exact calc h x = (f - g) x : by refl
---         ... = f x - g x : by simp
---         ... = f x - f x : by rw ← hx.1
---         ... = 0 : by ring,
---       exact hx.2,
---     },
---     {
---       intros hx, 
---       dsimp at hx, 
---       simp, split,
---       exact calc f x = f x - g x + g x : by simp
---         ... = (f - g) x + g x : by simp
---         ... = h x + g x : by refl
---         ... = 0 + g x : by rw hx.1
---         ... = g x : by ring,
---       exact hx.2,
---     },
---   end,
---   rw key at hs₀ hs₀',
---   intros z hz,
---   have : h z = 0 := vanishing_if_zeros_accumulate U h s₀ z hz,
---   assumption',
---   exact calc f z = f z - g z + g z : by simp
---         ... = (f - g) z + g z : by simp
---         ... = h z + g z : by refl
---         ... = 0 + g z : by rw this
---         ... = g z : by ring,
--- end
+theorem vanishing_if_zeros_accumulate
+(U : set ℂ) {hU₁ : is_open U} {hU₂ : is_connected U}
+(f : ℂ → ℂ) {hf : ∀ (z : ℂ), z ∈ U → analytic_at ℂ f z}
+(s₀ : ℂ)
+{hs₀ : is_accumulation_point {s : ℂ | f s = 0 ∧ s ∈ U} s₀} 
+{hs₀' : s₀ ∈ {s : ℂ | f s = 0 ∧ s ∈ U}}:
+∀ (z : ℂ), z ∈ U → f z = 0:=
+begin
+  let U₁ : set ℂ := {z : ℂ | z ∈ U ∧ ∃ (r : ℝ), 0 < r ∧ ball z r ⊆ U ∧ ∀ (x : ℂ), x ∈ ball z r → f x = 0},
+  let U₂ : set ℂ := {z : ℂ | z ∈ U ∧ ∃ (k : ℕ), ¬ iterated_deriv k f z = 0},
+  have h₁ : U₁ ∪ U₂ = U :=
+  begin
+    ext,
+    split,
+    {
+      intro h,
+      dsimp at h,
+      cases h with H₁ H₂,
+      exact H₁.1,
+      exact H₂.1,
+    },
+    {
+      intro H,
+      by_cases (x ∈ U₂),
+      exact (mem_union_right U₁) h,
+      {
+        by_cases h' : f x = 0,
+        {
+          have key : is_accumulation_point {s : ℂ | f s = 0 ∧ s ∈ U} x ∧ x ∈ {s : ℂ | f s = 0 ∧ s ∈ U}:=
+          begin
+            by_contradiction w,
+            rw not_and_distrib at w,
+            cases w with w₁ w₂,
+            {
+              -- sorry,
+              unfold is_accumulation_point at w₁,
+              simp at w₁,
+              rcases w₁ with ⟨U', hU₁', hU₂'⟩,
+              rw metric.mem_nhds_iff at hU₁',
+              rcases hU₁' with ⟨r, hr₁, hr₂⟩,
+              let U'' : set ℂ := ball x r ∩ U,
+              have key₁ : is_open U'' := is_open.inter metric.is_open_ball hU₁,
+              rw metric.is_open_iff at key₁,
+              specialize key₁ x (mem_inter (mem_ball_self hr₁) H),
+              rcases key₁ with ⟨ε, hε₁, hε₂⟩,
+              let x' : ℂ := x + ε / 2,
+              have key₂ : x' ∈ ball x ε := 
+              begin 
+                simp,
+                have : 0 ≤ ε / 2 := by linarith,
+                exact calc dist x' x = ∥(x + ε / 2) - x∥ : by rw dist_eq_norm
+                  ... = complex.abs ↑(ε / 2) : by simp
+                  ... = ε / 2 : by rw complex.abs_of_nonneg this
+                  ... < ε : by linarith,
+              end,
+              have key₃ : ¬ f x' = 0 :=
+              begin
+                by_contra w',
+                have : x' ∈ U'' := hε₂ key₂,
+                simp only [mem_inter_eq] at this,
+                specialize hU₂' x' w' this.2 (hr₂ this.1),
+                have key : ¬ x' - x = 0 := begin
+                  simp,
+                  exact ne_of_gt hε₁,
+                end,
+                show false, from key hU₂',
+              end,
+              have : ∃ (ε : ℝ), ε > 0 ∧ (∀ (z : ℂ), z ∈ ball x ε → analytic_at ℂ f z) ∧ ∃ (z : ℂ), z ∈ ball x ε ∧ ¬f z = 0 :=
+              begin
+                use ε,
+                split,
+                exact hε₁,
+                split,
+                intros z hz, 
+                exact hf z (mem_of_mem_inter_right (hε₂ hz)),
+                exact ⟨x', ⟨key₂, key₃⟩⟩,
+              end,
+              have key₄ : x ∈ U₂ :=
+              begin
+                dsimp,
+                split,
+                exact H,
+                rcases iff.elim_right (nonvanishing_iter_deriv_of_nonvanishing f x) this with ⟨k, hk⟩,
+                use k,
+                exact hf x H,
+              end, 
+              show false, from h key₄,
+            },
+            {
+              simp at w₂,
+              show false, from (w₂ h') H,
+            },
+          end,
+          rcases vanishing_disk_of_accumulation_point U f x with ⟨ε, hε₁, hε₂, hε₃⟩,
+          assumption',
+          have : x ∈ U₁ :=
+          begin
+            dsimp [U₁],
+            split,
+            exact H,
+            {
+              use ε,
+              exact ⟨hε₁, ⟨hε₂, hε₃⟩⟩,
+            },
+          end,
+          exact (mem_union_left U₂) this,
+          exact key.1,
+          exact key.2,
+        },
+        {
+          have key₁ : ∃ (k : ℕ), ¬ iterated_deriv k f x = 0 := by use 0,
+          have key₂ : x ∈ U₂ := begin
+            simp,
+            exact ⟨H, key₁⟩,
+          end,
+          exfalso,
+          exact h key₂,
+        },
+      },
+    },  
+  end,
+  have h₂ : U₁ ∩ U₂ = ∅ :=
+  begin
+    by_contra,
+    rw [← ne.def, ne_empty_iff_nonempty, nonempty_def] at h,
+    rcases h with ⟨x, hx⟩,
+    dsimp at hx,
+    rcases iff.elim_left (nonvanishing_iter_deriv_of_nonvanishing f x) hx.2.2 with ⟨ε, hε₁, hε₂, hε₃⟩,
+    rcases isolated_zeros_of_nonvanishing ε f x with ⟨r, hr₁, hr₂, hr₃⟩,
+    assumption',
+    swap,
+    exact hf x hx.1.1,
+    rcases hx.1.2 with ⟨r', hr₁', hr₂', hr₃'⟩,
+    let r'' : ℝ := min r r',
+    have minor₁ : 0 < r'' := 
+    begin
+      rw lt_min_iff,
+      exact ⟨hr₂, gt.lt hr₁'⟩,
+    end,
+    have minor₂ : ∃ (x' : ℂ), x' ∈ ball x r'' ∧ ¬ x' - x = 0 := 
+    begin
+      let x' : ℂ := x + r'' / 2,
+      use x',
+      split,
+      simp only [metric.mem_ball],
+      have : 0 ≤ r'' / 2 := by linarith,
+      exact calc dist x' x = ∥(x + r'' / 2) - x∥ : by rw dist_eq_norm
+        ... = complex.abs ↑(r'' / 2) : by simp
+        ... = r'' / 2 : by rw complex.abs_of_nonneg this
+        ... < r'' : by linarith,
+      simp,
+      exact ne_of_gt minor₁,
+    end,
+    rcases minor₂ with ⟨x', hx₁', hx₂'⟩,
+    have key₁ : f x' = 0 := hr₃' x' ((ball_subset_ball (min_le_right r r')) hx₁'),
+    have key₂ : ¬ f x' = 0 := hr₃ x' ((ball_subset_ball (min_le_left r r')) hx₁') hx₂',
+    show false, from key₂ key₁,
+  end,
+  have h₃ : is_open U₁ :=
+  begin
+    rw metric.is_open_iff,
+    intros x hx,
+    dsimp at hx,
+    rcases hx with ⟨hx₁, ε, hε₁, hε₂, hε₃⟩,
+    use ε,
+    split,
+    exact hε₁,
+    intros z hz,
+    dsimp,
+    split,
+    exact hε₂ hz,
+    have : ∃ (r : ℝ), (0 < r ∧ ball z r ⊆ U) ∧ ball z r ⊆ ball x ε :=
+    begin
+      have key : is_open (ball x ε) := is_open_ball,
+      rw metric.is_open_iff at key,
+      specialize key z hz,
+      rcases key with ⟨r, hr₁, hr₂⟩,
+      use r,
+      split,
+      exact ⟨hr₁, subset.trans hr₂ hε₂⟩,
+      exact hr₂,
+    end,
+    rcases this with ⟨r, hr₁, hr₂⟩,
+    use r,
+    split,
+    exact hr₁.1,
+    split,
+    exact hr₁.2,
+    intros x' hx',
+    exact hε₃ x' (hr₂ hx'),
+  end,
+  have h₄ : is_open U₂ :=
+  begin
+    sorry,   
+  end,
+  have h₅ : U₁.nonempty :=
+  begin
+    rw nonempty_def,
+    use s₀,
+    dsimp,
+    simp at hs₀',
+    split,
+    exact hs₀'.2,
+    rcases vanishing_disk_of_accumulation_point U f s₀ with ⟨ε, hε₁, hε₂, hε₃⟩,
+    assumption',
+    use ε,
+    exact ⟨hε₁, ⟨hε₂, hε₃⟩⟩,
+  end,
+  have hfinal : U₁ = U :=
+  begin
+    have : is_preconnected U := is_connected.is_preconnected hU₂,
+    rw is_preconnected_iff_subset_of_disjoint at this,
+    specialize this U₁ U₂ h₃ h₄ (eq.subset (eq.symm h₁)),
+    have minor : U ∩ (U₁ ∩ U₂) = ∅ := 
+    begin
+      rw h₂,
+      simp,
+    end,
+    specialize this minor,
+    cases this,
+    {
+      have minor' : U₁ ⊆ U :=
+      begin
+        let h := set.subset_union_left U₁ U₂,
+        rw h₁ at h,
+        exact h,
+      end,
+      exact has_subset.subset.antisymm minor' this,
+    },
+    {
+      have minor₁ : U₁ ⊆ U :=
+      begin
+        let h := set.subset_union_left U₁ U₂,
+        rw h₁ at h,
+        exact h,
+      end,
+      have minor₂ : U₂ ⊆ U :=
+      begin
+        let h := set.subset_union_right U₁ U₂,
+        rw h₁ at h,
+        exact h,
+      end,
+      have minor₃ : U₂ = U := has_subset.subset.antisymm minor₂ this,
+      have key : U₁ = ∅ :=
+      begin
+        rw [inter_comm, ← set.subset_empty_iff, ← set.diff_eq_self] at h₂,
+        rw ← h₂,
+        by_contra w,
+        rw [← ne.def, set.ne_empty_iff_nonempty, set.nonempty_diff, minor₃] at w,
+        show false, from w minor₁,
+      end,
+      rw [← set.not_nonempty_iff_eq_empty] at key,
+      exfalso,
+      exact key h₅,
+    },
+  end,
+  intros z hz,
+  have : z ∈ U₁ := (eq.subset (eq.symm hfinal)) hz,
+  dsimp at this,
+  rcases this.2 with ⟨r, hr₁, hr₂, hr₃⟩,
+  specialize hr₃ z (mem_ball_self hr₁),
+  exact hr₃,
+end
+
+theorem eq_if_eq_points_accumulate
+(U : set ℂ) {hU₁ : is_open U} {hU₂ : is_connected U}
+(f : ℂ → ℂ) {hf : ∀ (z : ℂ), z ∈ U → analytic_at ℂ f z}
+(g : ℂ → ℂ) {hg : ∀ (z : ℂ), z ∈ U → analytic_at ℂ g z}
+(s₀ : ℂ)
+{hs₀ : is_accumulation_point {s : ℂ | f s = g s ∧ s ∈ U} s₀} 
+{hs₀' : s₀ ∈ {s : ℂ | f s = g s ∧ s ∈ U}} :
+∀ (z : ℂ), z ∈ U → f z = g z :=
+begin
+  let h : ℂ → ℂ := f - g,
+  have minor : ∀ (z : ℂ), z ∈ U → analytic_at ℂ h z := λ z hz, analytic_at.sub (hf z hz) $ hg z hz,
+  have key : {s : ℂ | f s = g s ∧ s ∈ U} = {s : ℂ | h s = 0 ∧ s ∈ U} :=
+  begin
+    ext,
+    split,
+    { 
+      intros hx, 
+      dsimp at hx, 
+      simp, split,
+      exact calc h x = (f - g) x : by refl
+        ... = f x - g x : by simp
+        ... = f x - f x : by rw ← hx.1
+        ... = 0 : by ring,
+      exact hx.2,
+    },
+    {
+      intros hx, 
+      dsimp at hx, 
+      simp, split,
+      exact calc f x = f x - g x + g x : by simp
+        ... = (f - g) x + g x : by simp
+        ... = h x + g x : by refl
+        ... = 0 + g x : by rw hx.1
+        ... = g x : by ring,
+      exact hx.2,
+    },
+  end,
+  rw key at hs₀ hs₀',
+  intros z hz,
+  have : h z = 0 := vanishing_if_zeros_accumulate U h s₀ z hz,
+  assumption',
+  exact calc f z = f z - g z + g z : by simp
+        ... = (f - g) z + g z : by simp
+        ... = h z + g z : by refl
+        ... = 0 + g z : by rw this
+        ... = g z : by ring,
+end
+-/

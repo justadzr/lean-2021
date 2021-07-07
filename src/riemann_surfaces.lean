@@ -1,3 +1,4 @@
+--- Will clean up these imports
 import tactic
 import analysis.calculus.iterated_deriv
 import topology.continuous_function.polynomial
@@ -21,10 +22,6 @@ open set complex classical filter asymptotics continuous_linear_map set metric i
 open_locale topological_space classical nnreal asymptotics filter ennreal unit_interval
 
 noncomputable theory
-
-/-
-We immitate the existing definition of smooth manifolds to define Riemann_surfaces
--/
 
 def holomorph_pregroupoid : pregroupoid ℂ :=
 {
@@ -142,11 +139,7 @@ smooth_manifold_with_corners complex_plane X :=
     compatible := λ e e' he he',
     begin
        --- Very bad proof here
-      have : e.symm.trans e' ∈ biholomorph_groupoid := begin
-        apply structure_groupoid.compatible,
-        exact he,
-        exact he',
-      end,
+      have : e.symm.trans e' ∈ biholomorph_groupoid := biholomorph_groupoid.compatible he he',
       apply structure_groupoid.le_iff.mp (le_antisymm_iff.mp biholomorph_groupoid_eq).1,
       exact this,
     end
@@ -208,6 +201,11 @@ variables {X Y Z : Type*}
 [topological_space Y] [t2_space Y] [connected_space Y] [charted_space ℂ Y] [riemann_surface Y]
 [topological_space Z] [t2_space Z] [connected_space Z] [charted_space ℂ Z] [riemann_surface Z]
 
+--- Correct definition? `chart_at` or `atlas`? Seems equivalent to the analogy of the definitions of
+--- `times_cont_mdiff` given the compatibility of charts defined. 
+--- Skipped `lift_prop_on`, `image_eq_target_inter_inv_preimage` and `lift_prop_on_indep_chart`
+--- Can be derived from a `chart_at` + `lift_prop_on` definition given the lemma
+--- `biholomorph_groupoid_eq : biholomorph_groupoid = times_cont_diff_groupoid ⊤ complex_plane`
 def fholomorph_on (f : X → ℂ) {s : set X} (h : is_open s) :=
 continuous_on f s ∧
 ∀ (ϕ : local_homeomorph X ℂ),
@@ -226,6 +224,11 @@ begin
   },
 end
 
+--- Correct definition? `chart_at` or `atlas`? Seems equivalent to the analogy of the definitions of
+--- `times_cont_mdiff` given the compatibility of charts defined. 
+--- Skipped `lift_prop_on`, `image_eq_target_inter_inv_preimage` and `lift_prop_on_indep_chart`
+--- Can be derived from a `chart_at` + `lift_prop_on` definition given the lemma
+--- `biholomorph_groupoid_eq : biholomorph_groupoid = times_cont_diff_groupoid ⊤ complex_plane`
 def mholomorph (f : X → Y) :=
 continuous f ∧
 ∀ (ϕ : local_homeomorph X ℂ) (ψ : local_homeomorph Y ℂ), 
@@ -283,7 +286,7 @@ begin
   exact minor₂.symm ▸ fholomorph_on.mul minor₁ hf,
 end
 
--- do we need this?
+--- Do we need this?
 @[simp] theorem mholomorph.comp {f : X → Y} {g : Y → Z}
 (hf : mholomorph f) (hg : mholomorph g) : mholomorph (g ∘ f) :=
 begin
@@ -292,6 +295,7 @@ end
 
 variables (U : set X) [is_open U] [is_connected U]
 
+--- Contains some redundant lemmas. Bad obj names. Will clean it up.
 theorem eq_on_local_disk_around_accumulation_pt
 {f g : X → Y} (hf : mholomorph f) (hg : mholomorph g)
 {G : set X} (hG : set.eq_on f g G)
@@ -307,7 +311,7 @@ begin
   let W : set X := f⁻¹' ψ.to_local_equiv.source ∩ g⁻¹' ψ.to_local_equiv.source,
   let W' : set X := ϕ.to_local_equiv.source ∩ W,
   let V : set ℂ := ϕ '' W',
-  have zmemW' : z ∈ W' := 
+  have z_mem_W' : z ∈ W' := 
     ⟨mem_chart_source ℂ z,
       ⟨mem_chart_source ℂ (f z), 
       (minor₂ ▸ mem_chart_source ℂ (f z) : g z ∈ (chart_at ℂ (f z)).to_local_equiv.source)⟩⟩,
@@ -315,10 +319,10 @@ begin
     is_open.inter ϕ.open_source (is_open.inter (is_open.preimage hf.1 ψ.open_source) $ is_open.preimage hg.1 ψ.open_source),
   have openV : is_open V := 
     local_homeomorph.image_open_of_open ϕ openW' (set.inter_subset_left _ W),
-  have nonemptyW' : W'.nonempty := ⟨z, zmemW'⟩,
+  have nonemptyW' : W'.nonempty := ⟨z, z_mem_W'⟩,
   have nonemptyV : V.nonempty := set.nonempty.image ϕ nonemptyW',
   rw metric.is_open_iff at openV,
-  rcases openV (ϕ z) (set.mem_image_of_mem ϕ zmemW') with ⟨ε, hε, hball⟩,
+  rcases openV (ϕ z) (set.mem_image_of_mem ϕ z_mem_W') with ⟨ε, hε, hball⟩,
   let ϕball := ball (ϕ z) ε,
   have Vsubset : V ⊆ ϕ.to_local_equiv.target :=
   begin
@@ -332,7 +336,6 @@ begin
   have W'subsetg : W' ⊆ g⁻¹' ψ.to_local_equiv.source := set.subset.trans (set.inter_subset_right _ W) (set.inter_subset_right _ _),
   have fW'subsetsource : f '' W' ⊆ ψ.to_local_equiv.source := by rw ← set.image_subset_iff at W'subsetf; exact W'subsetf,
   have gW'subsetsource : g '' W' ⊆ ψ.to_local_equiv.source := by rw ← set.image_subset_iff at W'subsetg; exact W'subsetg,
-  --have openϕball : is_open ϕball := metric.is_open_ball, 
   have πfdiffon : differentiable_on ℂ πf (ϕ '' (ϕ.to_local_equiv.source ∩ f⁻¹' ψ.to_local_equiv.source)) :=
     hf.2 ϕ ψ (chart_mem_atlas ℂ z) (chart_mem_atlas ℂ (f z)),
   have πgdiffon : differentiable_on ℂ πg (ϕ '' (ϕ.to_local_equiv.source ∩ g⁻¹' ψ.to_local_equiv.source)) :=
@@ -358,7 +361,6 @@ begin
   have subkeyaccum : accumulation_pt ℂ (ϕ '' (G ∩ ϕ.to_local_equiv.source)) (ϕ z) := 
     accumulation_pt_local_homeomorph (accumulation_pt_open_inter ϕ.open_source (mem_chart_source ℂ z) hz) (mem_chart_source ℂ z),
   have superkeyaccum : accumulation_pt ℂ (ϕ '' (G ∩ ϕ.to_local_equiv.source) ∩ superkeyset) (ϕ z) := accumulation_pt_open_inter superkeyopen superkeymem subkeyaccum,
-  -- have superkeyeq₁ : set.eq_on πf πg (ϕ '' (G ∩ ϕ.to_local_equiv.source)) :=
   have superkeyeq₁ : set.eq_on πf πg (ϕ '' (G ∩ ϕ.to_local_equiv.source) ∩ superkeyset) :=
   begin
     intros m hm,
@@ -423,6 +425,7 @@ begin
   exact ⟨superkeymemU, superkeyopenU, superkeyeqU⟩,
 end
 
+--- Contains some redundant lemmas. Bad obj names. Will clean it up.
 theorem nondiscrete_closure_of_eq_mholomorph
 {f g : X → Y} (hf : mholomorph f) (hg : mholomorph g)
 {G : set X} (key₁ : is_open G) (hG₂ : set.eq_on f g G)
@@ -759,6 +762,7 @@ begin
   },
 end
 
+--- Unfinished
 theorem local_behavior_of_mholomorph
 {f : X → Y} (hf : mholomorph f) (a : X) 
 (h_non_const : ∀ x, ∃ y, ¬ f x = f y):
@@ -770,5 +774,8 @@ f '' ϕ.to_local_equiv.source ⊆ ψ.to_local_equiv.source ∧
 (ψ ∘ f ∘ ϕ.symm) v = v ^ k :=
 begin
   rcases chart_at_origin_of_fun_at hf.1 a with ⟨ϕ₁, ψ, h₁, h₂, h₃, h₄, h₅⟩,
-  
+  /-
+  TODO
+  -/
+  sorry,
 end

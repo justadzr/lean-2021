@@ -1,3 +1,4 @@
+--- Will clean up these imports
 import tactic
 import analysis.calculus.iterated_deriv
 import topology.continuous_function.polynomial
@@ -23,8 +24,6 @@ open_locale topological_space classical nnreal asymptotics filter ennreal unit_i
 noncomputable theory
 
 def uhalf_plane : set ℂ := {z : ℂ | z.im > 0}
-
--- def uhalf_plane' : Type* := ↥uhalf_plane
 
 localized "notation `ℍ` := uhalf_plane" in uhalf_plane
 
@@ -75,9 +74,19 @@ end upper_half_plane
 
 namespace rsphere
 
-def presphere := ℂ ⊕ ℂ
+def prersphere := sum ℂ ℂ
 
+def sum_eval (a : prersphere) : ℂ :=
+sum.rec_on a (λ z, z) (λ z, z)
+lemma sum_eval_left (a : ℂ) : sum_eval (sum.inl a) = a := rfl
+lemma sum_eval_right (a : ℂ) : sum_eval (sum.inr a) = a := rfl
 
+def rsphere_gluing : setoid prersphere :=
+{
+  /-
+  TODO
+  -/
+}
 
 end rsphere
 
@@ -126,5 +135,9 @@ quotient_add_group.quotient (clattice.add_subgroup h)
 
 instance {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : topological_space (ctorus h) :=
 quotient_add_group.quotient.topological_space _
+
+/-
+TODO: riemann_surface ctorus
+-/
 
 end ctorus
