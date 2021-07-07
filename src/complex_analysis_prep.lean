@@ -297,7 +297,8 @@ sorry
 end complex_theorems
 
 /-
-  Trash codes. A bad attempt to prove the identity theorem only assuming 
+  Trash codes. A bad attempt to prove the identity theorem only assuming some
+  standard results
 -/
 
 /-
