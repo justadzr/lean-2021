@@ -1,5 +1,5 @@
 import tactic
-import data.complex.exponential
+import analysis.complex.basic
 import analysis.normed_space.inner_product
 
 noncomputable theory
@@ -125,6 +125,8 @@ begin
   repeat {rw [is_R_or_C.of_real_mul, mul_assoc]},
   repeat {rw mul_div_mul_left _ _ minor'},
 end
+
+
 
 -- structure conformal 
 -- (𝕜 X Y : Type*) [is_R_or_C 𝕜] 

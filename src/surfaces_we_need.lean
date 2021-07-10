@@ -74,19 +74,57 @@ end upper_half_plane
 
 namespace rsphere
 
-def prersphere := sum ℂ ℂ
-
-def sum_eval (a : prersphere) : ℂ :=
-sum.rec_on a (λ z, z) (λ z, z)
-lemma sum_eval_left (a : ℂ) : sum_eval (sum.inl a) = a := rfl
-lemma sum_eval_right (a : ℂ) : sum_eval (sum.inr a) = a := rfl
+def prersphere := ℂ ⊕ ℂ
 
 def rsphere_gluing : setoid prersphere :=
 {
-  /-
-  TODO
-  -/
+  r := λ a b, (a = b) ∨ ((a.get_left.iget * b.get_right.iget = 1) ∨ (a.get_right.iget * b.get_left.iget = 1)),
+  iseqv :=
+  begin
+    split,
+    exact λ x, or.intro_left _ rfl,
+    split,
+    {
+      intros a b hab, cases hab,
+      exact or.intro_left _ hab.symm,
+      cases hab,
+      { rw mul_comm at hab, exact or.intro_right _ (or.intro_right _ hab), },
+      { rw mul_comm at hab, exact or.intro_right _ (or.intro_left _ hab), },
+    },
+    {
+      intros a b c hab hbc,
+      cases hab,
+      {
+        cases hbc,
+        exact or.intro_left _ (hab.symm ▸ hbc),
+        cases hbc,
+        exact or.intro_right _ (or.intro_left _ $ hab.symm ▸ hbc),
+        exact or.intro_right _ (or.intro_right _ $ hab.symm ▸ hbc),
+      },
+      {
+        cases hab,
+        {
+          cases hbc,
+          exact or.intro_right _ (or.intro_left _ $ hbc ▸ hab),
+          cases hbc,
+          {
+            sorry,
+          },
+          {
+            sorry,
+          },
+        },
+        {
+          sorry,
+        },
+      },
+    },
+  end,
 }
+
+def rsphere := quotient rsphere_gluing
+
+instance : 
 
 end rsphere
 
