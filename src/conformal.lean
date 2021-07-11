@@ -1,8 +1,12 @@
 import tactic
 import analysis.complex.basic
+import data.matrix.notation
+import linear_algebra.matrix.determinant
 import analysis.normed_space.inner_product
 
 noncomputable theory
+
+open complex
 
 namespace conformal
 
@@ -65,8 +69,8 @@ begin
     intros u v,
     rw [← continuous_linear_equiv.coe_coe f', ← continuous_linear_equiv.coe_def_rev f'],
     rw [has_fderiv_at.unique h h₁, h₃],
-    simp, rw [inner_smul_left, inner_smul_right], 
-    simp, rw [← mul_assoc, is_R_or_C.conj_mul_eq_norm_sq_left c₁],
+    simp only [function.comp_apply, inner_smul_left, inner_smul_right, linear_isometry_equiv.inner_map_map],
+    rw ← mul_assoc, nth_rewrite 1 mul_comm, rw is_R_or_C.conj_mul_eq_norm_sq_left,
   },
   {
     intros H,
@@ -76,7 +80,7 @@ begin
     have hc : ¬ c = 0 := λ w, by simp at w; exact (real.sqrt_ne_zero'.mpr Hc₁) w,
     have hc' : ↑(is_R_or_C.norm_sq c) * (c₁ : 𝕜) = 1 :=
     begin
-      simp, rw [is_R_or_C.norm_sq_eq_def'],
+      rw [is_R_or_C.norm_sq_eq_def'],
       simp, rw [← is_R_or_C.of_real_mul, real.mul_self_sqrt (le_of_lt Hc₁)],
       exact inv_mul_cancel hc₁,
     end,
@@ -98,12 +102,16 @@ begin
   },
 end
 
+def conformal_at.char_fun {f : X → Y} (x : X) {f' : X ≃L[𝕜] Y}
+(h : has_fderiv_at f f'.to_continuous_linear_map x) (H : conformal_at 𝕜 f x) : ℝ :=
+by choose c hc huv using (conformal_at_iff h).mp H; exact c
+
 def inner_product_angle {E : Type*} [inner_product_space 𝕜 E] (u v : E) : 𝕜 :=
 inner u v / (∥u∥ * ∥v∥)
 @[simp] theorem inner_product_angle.def {E : Type*} [inner_product_space 𝕜 E] (u v : E) :
 inner_product_angle u v = (inner u v / (∥u∥ * ∥v∥) : 𝕜) := rfl
 
-theorem conformal_at_angle {f : X → Y} {x : X} {f' : X ≃L[𝕜] Y}
+theorem conformal_at_preserves_angle {f : X → Y} {x : X} {f' : X ≃L[𝕜] Y}
 (h : has_fderiv_at f f'.to_continuous_linear_map x) (H : conformal_at 𝕜 f x) :
 ∀ (u v : X), inner_product_angle (f' u) (f' v) = (inner_product_angle u v : 𝕜) :=
 begin
@@ -126,8 +134,84 @@ begin
   repeat {rw mul_div_mul_left _ _ minor'},
 end
 
+variables {f : ℂ → ℂ} {z : ℂ}
 
+def complex_jacobian_at (h : differentiable_at ℂ f z) : matrix (fin 2) (fin 2) ℝ :=
+![![fderiv ℝ (re ∘ f) z 1, fderiv ℝ (re ∘ f) z I], ![fderiv ℝ (im ∘ f) z 1, fderiv ℝ (im ∘ f) z I]]
 
+@[simp] theorem complex_jacobian_at.def (h : differentiable_at ℂ f z) :
+complex_jacobian_at h = ![![fderiv ℝ (re ∘ f) z 1, fderiv ℝ (re ∘ f) z I], 
+                          ![fderiv ℝ (im ∘ f) z 1, fderiv ℝ (im ∘ f) z I]] := rfl
+
+def complex_jacobian_det_at (h : differentiable_at ℂ f z) : ℝ :=
+(fderiv ℝ (re ∘ f) z 1) * fderiv ℝ (im ∘ f) z I - (fderiv ℝ (re ∘ f) z I) * fderiv ℝ (im ∘ f) z 1
+
+variables (h : differentiable_at ℂ f z)
+
+@[simp] theorem complex_jacobian_at_det_eq (h : differentiable_at ℂ f z) :
+(complex_jacobian_at h).det = (fderiv ℝ (re ∘ f) z 1) * fderiv ℝ (im ∘ f) z I - (fderiv ℝ (re ∘ f) z I) * fderiv ℝ (im ∘ f) z 1 :=
+begin
+  rw matrix.det_succ_row_zero, repeat {rw [fin.sum_univ_succ]}, simp_rw [fin.sum_univ_zero],
+  simp, rw ← sub_eq_add_neg _ _,
+end
+
+@[simp] theorem cmatrix_two_apply00 (a b c d : ℂ) : ![![a, b], ![c, d]] 0 0 = a := rfl
+@[simp] theorem cmatrix_two_apply01 (a b c d : ℂ) : ![![a, b], ![c, d]] 0 1 = b := rfl
+@[simp] theorem cmatrix_two_apply10 (a b c d : ℂ) : ![![a, b], ![c, d]] 1 0 = c := rfl
+@[simp] theorem cmatrix_two_apply11 (a b c d : ℂ) : ![![a, b], ![c, d]] 1 1 = d := rfl
+@[simp] theorem rmatrix_two_apply00 (a b c d : ℝ) : ![![a, b], ![c, d]] 0 0 = a := rfl
+@[simp] theorem rmatrix_two_apply01 (a b c d : ℝ) : ![![a, b], ![c, d]] 0 1 = b := rfl
+@[simp] theorem rmatrix_two_apply10 (a b c d : ℝ) : ![![a, b], ![c, d]] 1 0 = c := rfl
+@[simp] theorem rmatrix_two_apply11 (a b c d : ℝ) : ![![a, b], ![c, d]] 1 1 = d := rfl
+
+@[simp] theorem cvec_two_apply (a b : ℂ) : ![a, b] 0 = a := rfl
+@[simp] theorem cvec_two_apply' (a b : ℂ) : ![a, b] 1 = b := rfl
+@[simp] theorem rvec_two_apply (a b : ℝ) : ![a, b] 0 = a := rfl
+@[simp] theorem rvec_two_apply' (a b : ℝ) : ![a, b] 1 = b := rfl
+
+theorem real_fderiv_to_matrix (h : differentiable_at ℂ f z) (x : ℂ) : 
+(linear_map.to_matrix complex.basis_one_I complex.basis_one_I) (fderiv ℝ f z) = complex_jacobian_at h :=
+begin
+  let h' := h.restrict_scalars ℝ,
+  ext,
+  rw linear_map.to_matrix_apply _ _ _ _ _,
+  simp only [coe_basis_one_I, coe_basis_one_I_repr],
+  fin_cases i,
+  { 
+    fin_cases j,
+    repeat {rw cvec_two_apply}, rw rvec_two_apply, 
+    simp only [complex_jacobian_at, rmatrix_two_apply00],
+    simp only [(has_fderiv_at_re.comp z h').fderiv],
+  },
+  { sorry, },
+end
+
+theorem complex_jacobian_det_eq_fderiv_norm_sq (h : differentiable_at ℂ f z) :
+complex_jacobian_det_at h = norm_sq (fderiv ℂ f z 1) :=
+begin
+  sorry,
+end
+
+@[simp] theorem complex_jacobian_det_eq_zero_iff (h : differentiable_at ℂ f z) :
+complex_jacobian_det_at h = 0 ↔ fderiv ℂ f z 1 = 0 := by rw complex_jacobian_det_eq_fderiv_norm_sq h; simp
+
+@[simp] theorem complex_jacobian_det_ne_zero_iff (h : differentiable_at ℂ f z) :
+¬ complex_jacobian_det_at h = 0 ↔ ¬ fderiv ℂ f z 1 = 0 := not_iff_not_of_iff $ complex_jacobian_det_eq_zero_iff h
+
+theorem complex_conformal_at_iff_jdet_at_ne_zero
+{f : ℂ → ℂ} {z : ℂ} (h : differentiable_at ℂ f z) :
+¬ deriv f z = 0 ↔ conformal_at ℝ f z :=
+begin
+  split,
+  {
+    intros H,
+    rcases h with ⟨f', hf'⟩,
+    apply conformal_at_iff.mpr,
+  },
+  sorry,
+end
+
+namespace conformal
 -- structure conformal 
 -- (𝕜 X Y : Type*) [is_R_or_C 𝕜] 
 -- [inner_product_space 𝕜 X] [inner_product_space 𝕜 Y] :=
@@ -139,4 +223,3 @@ end
 -- (has_fderiv_at' : ∀ x, has_fderiv_at to_fun (fderiv_at x) x)
 -- (conformality' : ∀ x, ⇑(fderiv_at x) = (λ y, (const_at x) • y) ∘ (lie_at x))
 
-end conformal
