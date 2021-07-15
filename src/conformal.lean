@@ -1,11 +1,10 @@
 import tactic
-import analysis.complex.basic
 import data.matrix.notation
-import linear_algebra.matrix.to_linear_equiv
+import analysis.complex.basic
+import geometry.manifold.charted_space
 import analysis.normed_space.inner_product
+import linear_algebra.matrix.to_linear_equiv
 import analysis.normed_space.finite_dimension
-
-
 
 noncomputable theory
 
@@ -673,9 +672,41 @@ end complex_conformal
 
 section conformal_groupoid
 
-variables
+variables {E F G: Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] [inner_product_space ℝ G]
 
-def conformal_on {E F: Type*} [inner_product_space ℝ E]
+def conformal_on (f : E → F) (s : set E) := ∀ (x : E), x ∈ s → conformal_at f x
+
+lemma conformal.conformal_on (f : E → F) (h : conformal f) :
+conformal_on f set.univ := λ x hx, h x
+
+lemma conformal_on.comp {f : E → E} {g :E → E}
+{u v : set E} (hf : conformal_on f u) (hg : conformal_on g v) :
+conformal_on (g ∘ f) (u ∩ f⁻¹' v) := λ x hx, (hf x hx.1).comp (hg (f x) (set.mem_preimage.mp hx.2))
+
+lemma conformal_on.congr {f : E → E} {g :E → E}
+{u : set E} (hu : is_open u) (h : ∀ (x : E), x ∈ u → g x = f x) (hf : conformal_on f u) :
+conformal_on g u := λ x hx, let ⟨f', c, lie, h₁, h₂, h₃⟩ := hf x hx in
+begin
+  have : has_fderiv_at g f' x :=
+  begin
+    apply h₁.congr_of_eventually_eq,
+    rw filter.eventually_eq_iff_exists_mem,
+    use [u, hu.mem_nhds hx],
+    exact h,
+  end,
+  exact ⟨f', c, lie, ⟨this, h₂, h₃⟩⟩,
+end
+
+def conformal_pregroupoid : pregroupoid E :=
+{
+  property := λ f u, conformal_on f u,
+  comp := λ f g u v hf hg hu hv huv, hf.comp hg,
+  id_mem := conformal.conformal_on id conformal.id,
+  locality := λ f u hu h x hx, let ⟨v, h₁, h₂, h₃⟩ := h x hx in h₃ x ⟨hx, h₂⟩,
+  congr := λ f g u hu h hf, conformal_on.congr hu h hf,
+}
+
+def conformal_groupoid : structure_groupoid E := conformal_pregroupoid.groupoid
 
 end conformal_groupoid
 
