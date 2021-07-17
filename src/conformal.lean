@@ -212,7 +212,7 @@ begin
   exact ⟨c, ne_of_gt (norm_pos_iff.mpr minor₂), (rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩), key⟩,
 end
 
--- ℂ-antilinear or being a conj of a ℂ-linear map?
+-- ℂ-antilinear or being the conjugate of a ℂ-linear map?
 lemma quick2 (hz : ⇑g ≠ (λ x, (0 : ℂ))) :
 (∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g')  → ∃ (c : ℝ) (hc : c ≠ 0) (lie : ℂ ≃ₗᵢ[ℝ] ℂ), ⇑g = (λ y, c • y) ∘ lie :=
 begin
@@ -230,24 +230,9 @@ begin
   use [c, hc, lie.trans conj_lie],
   rw [hg, hg'], funext, simp only [function.comp_app],
   rw [← complex.conj_lie_apply, conj_lie.map_smul, linear_isometry_equiv.coe_trans],
-  
-  -- have minor₂ : g 1 ≠ 0 := λ w, let p : ⇑g = (λ x, (0 : ℂ)) := by funext; nth_rewrite 0 minor₁ x; 
-  --   rw [h 1 x, w, mul_zero] in hz p,
-  -- have minor₃ : complex.abs ((g 1) / c) = 1 := by simp only [complex.abs_div, abs_of_real]; 
-  --   simp_rw [c]; simp only [norm_eq_abs, complex.abs_abs, div_self (abs_ne_zero.mpr minor₂)],
-  -- have key : ⇑g = (λ x, c • x) ∘ (conj_lie.trans $ rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩) :=
-  -- begin
-  --   funext,
-  --   nth_rewrite 0 minor₁ x, rw h 1 x,
-  --   simp only [linear_isometry_equiv.coe_trans, function.comp_apply, 
-  --              rotation_apply, conj_lie_apply, set_like.coe_mk, smul_coe],
-  --   rw [← mul_assoc], nth_rewrite 2 mul_comm, nth_rewrite 1 mul_assoc,
-  --   rw [inv_mul_cancel (of_real_ne_zero.mpr $ ne_of_gt $ norm_pos_iff.mpr minor₂), mul_one, mul_comm],
-  -- end,
-  -- exact ⟨c, ne_of_gt (norm_pos_iff.mpr minor₂), (conj_lie.trans $ rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩), key⟩,
 end
 
--- ℂ-antilinear or being a conj of a ℂ-linear map?
+-- ℂ-antilinear or being the conjugate of a ℂ-linear map?
 lemma quick3 (h : ∃ (c : ℝ) (hc : c ≠ 0) (lie : ℂ ≃ₗᵢ[ℝ] ℂ), ⇑g = (λ y, c • y) ∘ lie) :
 (is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g') ∧ ⇑g ≠ (λ x, (0 : ℂ)) :=
 begin
@@ -403,8 +388,25 @@ begin
     },
   }
 end
+end complex_conformal
+/-!
+## Trash code
+-/
+-- have minor₂ : g 1 ≠ 0 := λ w, let p : ⇑g = (λ x, (0 : ℂ)) := by funext; nth_rewrite 0 minor₁ x; 
+--   rw [h 1 x, w, mul_zero] in hz p,
+-- have minor₃ : complex.abs ((g 1) / c) = 1 := by simp only [complex.abs_div, abs_of_real]; 
+--   simp_rw [c]; simp only [norm_eq_abs, complex.abs_abs, div_self (abs_ne_zero.mpr minor₂)],
+-- have key : ⇑g = (λ x, c • x) ∘ (conj_lie.trans $ rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩) :=
+-- begin
+--   funext,
+--   nth_rewrite 0 minor₁ x, rw h 1 x,
+--   simp only [linear_isometry_equiv.coe_trans, function.comp_apply, 
+--              rotation_apply, conj_lie_apply, set_like.coe_mk, smul_coe],
+--   rw [← mul_assoc], nth_rewrite 2 mul_comm, nth_rewrite 1 mul_assoc,
+--   rw [inv_mul_cancel (of_real_ne_zero.mpr $ ne_of_gt $ norm_pos_iff.mpr minor₂), mul_one, mul_comm],
+-- end,
+-- exact ⟨c, ne_of_gt (norm_pos_iff.mpr minor₂), (conj_lie.trans $ rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩), key⟩,
 
--- A bad proof.
 /-!
 ## Content
 1. Some time-saving lemmas for rewrites.
@@ -928,8 +930,6 @@ end
 -- {f : ℂ → ℂ} (h : ∀ (x : ℂ), differentiable_at ℝ f x) (H : ∀ (x : ℂ), ¬ fderiv ℝ f x 1 = 0) :
 -- (∀ (x : ℂ), (differentiable_at ℂ f x ∨ ∃ (g : ℂ → ℂ) (hg : differentiable_at ℂ g x), f = conj ∘ g)) →
 -- conformal f := λ hf x, conformal_at_if_real_deriv_ne_zero_of_holomorph_or_antiholomorph (h x) (H x) (hf x)
-
-end complex_conformal
 
 
 
