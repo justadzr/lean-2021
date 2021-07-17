@@ -18,31 +18,34 @@ section conformal
 Failed to build conformal maps on general `inner_product_space`. Instead, focus on Euclidean spaces.
 -/
 
+def is_conformal_map {X Y : Type*} 
+[inner_product_space ℝ X] [inner_product_space ℝ Y] (f' : X →L[ℝ] Y) :=
+∃ (c : ℝ) (hc : c ≠ 0) (lie : X ≃ₗᵢ[ℝ] Y), ⇑f' = (λ y, c • y) ∘ lie
+
 def conformal_at 
 {X Y : Type*} [inner_product_space ℝ X] [inner_product_space ℝ Y] 
 (f : X → Y) (x : X) :=
-∃ (f' : X →L[ℝ] Y) (c : ℝ) (hc : c ≠ 0) (lie : X ≃ₗᵢ[ℝ] Y),
-has_fderiv_at f f' x ∧ ⇑f' = (λ y, c • y) ∘ lie
+∃ (f' : X →L[ℝ] Y), has_fderiv_at f f' x ∧ is_conformal_map f'
 
 def conformal 
 {X Y : Type*} [inner_product_space ℝ X] [inner_product_space ℝ Y]
 (f : X → Y) := ∀ (x : X), conformal_at f x
 
-variables {X Y : Type*} [inner_product_space ℝ X] [inner_product_space ℝ Y] 
+variables {X Y : Type*} [inner_product_space ℝ X] [inner_product_space ℝ Y]
 
 theorem conformal_at.differentiable_at {f : X → Y} {x : X} (h : conformal_at f x) :
-differentiable_at ℝ f x := let ⟨f', c, hc, lie, h₁, h₂⟩ := h in h₁.differentiable_at
+differentiable_at ℝ f x := let ⟨f', h₁, c, hc, lie, h₂⟩ := h in h₁.differentiable_at
 
 theorem conformal.differentiable {f : X → Y} (h : conformal f) :
 differentiable ℝ f := λ x, (h x).differentiable_at
 
 theorem conformal_at.id (x : X) : conformal_at id x := 
-⟨continuous_linear_map.id ℝ X, 1, one_ne_zero, linear_isometry_equiv.refl ℝ X, ⟨has_fderiv_at_id _, by ext; simp only [function.comp_app, linear_isometry_equiv.coe_refl, id, one_smul, continuous_linear_map.id_apply]⟩⟩
+⟨continuous_linear_map.id ℝ X, ⟨has_fderiv_at_id _, 1, one_ne_zero, linear_isometry_equiv.refl ℝ X, by ext; simp only [function.comp_app, linear_isometry_equiv.coe_refl, id, one_smul, continuous_linear_map.id_apply]⟩⟩
 
 theorem conformal.id : conformal (id : X → X) := λ x, conformal_at.id x
 
 theorem conformal_at.const_smul {c : ℝ} (h : c ≠ 0) (x : X) : conformal_at (λ (x': X), c • x') x :=
-⟨c • continuous_linear_map.id ℝ X, c, h, linear_isometry_equiv.refl ℝ X, ⟨by apply has_fderiv_at.const_smul (has_fderiv_at_id x) c, by ext; simp only [linear_isometry_equiv.coe_refl, id, continuous_linear_map.id_apply, continuous_linear_map.smul_apply, function.comp_app]⟩⟩
+⟨c • continuous_linear_map.id ℝ X, ⟨by apply has_fderiv_at.const_smul (has_fderiv_at_id x) c, c, h, linear_isometry_equiv.refl ℝ X, by ext; simp only [linear_isometry_equiv.coe_refl, id, continuous_linear_map.id_apply, continuous_linear_map.smul_apply, function.comp_app]⟩⟩
 
 theorem conformal.const_smul {c : ℝ} (h : c ≠ 0) : 
 conformal (λ (x : X), c • x) := λ x, conformal_at.const_smul h x
@@ -53,10 +56,10 @@ theorem conformal_at.comp {f : X → Y} {g : Y → Z} {x : X}
 (hf : conformal_at f x) (hg : conformal_at g (f x)) :
 conformal_at (g ∘ f) x :=
 begin
-  rcases hf with ⟨f', cf, hcf, lief, hf₁, hf₂⟩,
-  rcases hg with ⟨g', cg, hcg, lieg, hg₁, hg₂⟩,
-  use [g'.comp f', cg * cf, mul_ne_zero hcg hcf, lief.trans lieg],
-  exact ⟨has_fderiv_at.comp x hg₁ hf₁,
+  rcases hf with ⟨f', hf₁, cf, hcf, lief, hf₂⟩,
+  rcases hg with ⟨g', hg₁, cg, hcg, lieg, hg₂⟩,
+  use [g'.comp f'],
+  exact ⟨has_fderiv_at.comp x hg₁ hf₁, cg * cf, mul_ne_zero hcg hcf, lief.trans lieg,
         by ext; rw [continuous_linear_map.coe_comp' f' g', hf₂, hg₂]; 
         simp [function.comp_app]; exact smul_smul cg cf _⟩,
 end
@@ -71,7 +74,7 @@ begin
   split,
   {
     intros h',
-    rcases h' with ⟨f₁, c₁, hc₁, lie, h₁, h₂⟩,
+    rcases h' with ⟨f₁, h₁, c₁, hc₁, lie, h₂⟩,
     use [c₁ ^ 2, sq_pos_of_ne_zero _ hc₁],
     intros u v,
     rw [← continuous_linear_equiv.coe_coe f', 
@@ -97,7 +100,7 @@ begin
           real_inner_smul_right, huv u v, ← mul_assoc, ← mul_assoc, 
           real.mul_self_sqrt $ le_of_lt $ inv_pos.mpr hc₁, 
           inv_mul_cancel $ ne_of_gt hc₁, one_mul],
-    exact ⟨f'.to_continuous_linear_map, c⁻¹, inv_ne_zero hc, f₁.isometry_of_inner key, ⟨h, minor'⟩⟩,
+    exact ⟨f'.to_continuous_linear_map, ⟨h, c⁻¹, inv_ne_zero hc, f₁.isometry_of_inner key, minor'⟩⟩,
   },
 end
 
@@ -114,7 +117,7 @@ begin
   suffices new : inner (f' u) (f' v) / (∥f' u∥ * ∥f' v∥) = inner u v / (∥u∥ * ∥v∥),
   { rw new, },
   {
-    rcases H with ⟨f₁, c₁, hc₁, lie, h₁, h₂⟩,
+    rcases H with ⟨f₁, h₁, c₁, hc₁, lie, h₂⟩,
     have minor : ∥c₁∥ ≠ 0 := λ w, hc₁ (norm_eq_zero.mp w),
     have : f'.to_continuous_linear_map = f₁ := has_fderiv_at.unique h h₁,
     rw [← continuous_linear_equiv.coe_coe f', ← continuous_linear_equiv.coe_def_rev f'],
@@ -151,7 +154,7 @@ conformal_on (g ∘ f) (u ∩ f⁻¹' v) := λ x hx, (hf x hx.1).comp (hg (f x) 
 
 lemma conformal_on.congr {f : E → E} {g :E → E}
 {u : set E} (hu : is_open u) (h : ∀ (x : E), x ∈ u → g x = f x) (hf : conformal_on f u) :
-conformal_on g u := λ x hx, let ⟨f', c, hc, lie, h₁, h₂⟩ := hf x hx in
+conformal_on g u := λ x hx, let ⟨f', h₁, c, hc, lie, h₂⟩ := hf x hx in
 begin
   have : has_fderiv_at g f' x :=
   begin
@@ -160,7 +163,7 @@ begin
     use [u, hu.mem_nhds hx],
     exact h,
   end,
-  exact ⟨f', c, hc, lie, ⟨this, h₂⟩⟩,
+  exact ⟨f', ⟨this, c, hc, lie, h₂⟩⟩,
 end
 
 def conformal_pregroupoid : pregroupoid E :=
@@ -191,7 +194,7 @@ theorem quick0 (a : circle) : is_linear_map ℂ (rotation a) :=
 
 -- Is the statement `is_linear_map ℂ g` the best way to say `g` is `ℂ`-linear?
 lemma quick1 (hz : ⇑g ≠ (λ x, (0 : ℂ))) :
-is_linear_map ℂ g → ∃ (c : ℝ) (hc : c ≠ 0) (lie : ℂ ≃ₗᵢ[ℝ] ℂ), ⇑g = (λ y, c • y) ∘ lie :=
+is_linear_map ℂ g → is_conformal_map g :=
 begin
   intro h,
   let c := ∥g 1∥,
@@ -214,27 +217,21 @@ end
 
 -- ℂ-antilinear or being the conjugate of a ℂ-linear map?
 lemma quick2 (hz : ⇑g ≠ (λ x, (0 : ℂ))) :
-(∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g')  → ∃ (c : ℝ) (hc : c ≠ 0) (lie : ℂ ≃ₗᵢ[ℝ] ℂ), ⇑g = (λ y, c • y) ∘ lie :=
+is_linear_map ℂ g  → is_conformal_map (conj_cle.to_continuous_linear_map.comp g) :=
 begin
-  intro h, rcases h with ⟨g', hg⟩,
-  have : ⇑g' ≠ (λ x, (0 : ℂ)) := λ w,
-  begin
-    rw w at hg,
-    have minor : ⇑g = (λ x, (0 : ℂ)) := by funext; rw hg; simp only [function.comp_app]; rw conj_eq_zero,
-    exact hz minor,
-  end,
-  let p := g'.to_linear_map.is_linear,
-  rw [continuous_linear_map.to_linear_map_eq_coe, continuous_linear_map.coe_coe] at p,
-  rcases @quick1 (g'.restrict_scalars ℝ) this p with ⟨c, hc, lie, hg'⟩,
+  intro h,
+  rcases quick1 hz h with ⟨c, hc, lie, hg'⟩,
   simp only [continuous_linear_map.coe_restrict_scalars'] at hg',
   use [c, hc, lie.trans conj_lie],
-  rw [hg, hg'], funext, simp only [function.comp_app],
+  rw [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
+      continuous_linear_equiv.coe_coe, hg'],
+  funext, simp only [function.comp_app, conj_cle_apply],
   rw [← complex.conj_lie_apply, conj_lie.map_smul, linear_isometry_equiv.coe_trans],
 end
 
 -- ℂ-antilinear or being the conjugate of a ℂ-linear map?
-lemma quick3 (h : ∃ (c : ℝ) (hc : c ≠ 0) (lie : ℂ ≃ₗᵢ[ℝ] ℂ), ⇑g = (λ y, c • y) ∘ lie) :
-(is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g') ∧ ⇑g ≠ (λ x, (0 : ℂ)) :=
+lemma quick3 (h : is_conformal_map g) :
+(is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g') ∧ ⇑g ≠ λ x, (0 : ℂ) :=
 begin
   rcases h with ⟨c, hc, lie, hg⟩,
   split, swap,
@@ -314,10 +311,38 @@ begin
   rw ← h', exact h,
 end
 
--- Not sure if we need this lemma since eventually we will split it eventually
+-- Not sure if we need this lemma since eventually we will split it
 theorem main_aux:
-(∃ (c : ℝ) (hc : c ≠ 0) (lie : ℂ ≃ₗᵢ[ℝ] ℂ), ⇑g = (λ y, c • y) ∘ lie) ↔ (is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g') ∧ ⇑g ≠ (λ x, (0 : ℂ)) :=
-(iff_iff_implies_and_implies _ _).mpr (and.intro quick3 $ λ p, or.elim p.1 (quick1 p.2) (quick2 p.2))
+is_conformal_map g ↔ (is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), ⇑g = conj ∘ g') ∧ ⇑g ≠ λ x, (0 : ℂ) :=
+begin
+  split,
+  { exact quick3, },
+  { 
+    intros h, rcases h with ⟨h₁, h₂⟩, cases h₁,
+    { exact quick1 h₂ h₁, },
+    { 
+      rcases h₁ with ⟨g', hg'⟩, 
+      have minor₁ : g = conj_cle.to_continuous_linear_map.comp (g'.restrict_scalars ℝ) :=
+      begin 
+        rw continuous_linear_map.ext_iff, intro x,
+        simp only [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
+                   continuous_linear_equiv.coe_coe, function.comp_app,
+                   conj_cle_apply, continuous_linear_map.coe_restrict_scalars'],
+        rw hg',
+      end,
+      have minor₂ : is_linear_map ℂ (g'.restrict_scalars ℝ) := 
+        by rw continuous_linear_map.coe_restrict_scalars'; exact g'.to_linear_map.is_linear,
+      have minor₃ : (g'.restrict_scalars ℝ : ℂ → ℂ) ≠ λ x, (0 : ℂ) := λ w,
+      begin
+        rw continuous_linear_map.coe_restrict_scalars' at w,
+        have : ⇑g = λ x, (0 : ℂ) := by funext; rw [hg', w]; simp only [function.comp_app, conj_eq_zero],
+        exact h₂ this,
+      end,
+      exact minor₁.symm ▸ (quick2 minor₃ minor₂),
+    },
+  },
+end
+-- (iff_iff_implies_and_implies _ _).mpr (and.intro quick3 $ λ p, or.elim p.1 (quick1 p.2) (quick2 p.2))
 
 theorem main (h : differentiable_at ℝ f z) :
 ((differentiable_at ℂ f z ∨ ∃ (g : ℂ → ℂ) (hg : differentiable_at ℂ g z), f = conj ∘ g) ∧ fderiv ℝ f z 1 ≠ 0) ↔ conformal_at f z :=
@@ -326,28 +351,39 @@ begin
   {
     intro H, rcases H with ⟨H₁, H₂⟩, 
     let f' := fderiv ℝ f z,
-    have : ⇑f' ≠ (λ x, (0 : ℂ)) := λ w, by rw w at H₂; simp only [function.app] at H₂; exact H₂ rfl,
+    have : ⇑f' ≠ λ x, (0 : ℂ) := λ w, by rw w at H₂; simp only [function.app] at H₂; exact H₂ rfl,
     cases H₁,
     { 
       rcases quick1 this (quick_complex_linear H₁) with ⟨c, hc, lie, h'⟩,
-      exact ⟨f', c, hc, lie, ⟨h.has_fderiv_at, h'⟩⟩,
+      exact ⟨f', ⟨h.has_fderiv_at, c, hc, lie, h'⟩⟩,
     },
     { 
       rcases H₁ with ⟨g, hg, hfg⟩,
-      have  minor: ⇑f' = conj ∘ (fderiv ℂ g z) :=
+      have minor₁: ⇑f' = conj ∘ (fderiv ℂ g z) :=
       begin
         funext, simp only [function.comp_app],
         let q := quick_conj_comp_aux z x (hg.restrict_scalars ℝ),
         rw quick_eq_fderiv hg at q, simp only [f', hfg], rw q,
       end,
-      rcases quick2 this ⟨fderiv ℂ g z, minor⟩ with ⟨c, hc, lie, h'⟩,
-      exact ⟨f', c, hc, lie, ⟨h.has_fderiv_at, h'⟩⟩,
+      have minor₂ : ⇑((fderiv ℂ g z).restrict_scalars ℝ) ≠ λ x, (0 : ℂ) := λ w,
+      begin
+        rw continuous_linear_map.coe_restrict_scalars' at w,
+        have sub : ⇑f' = λ x, (0 : ℂ) := by funext; rw [minor₁, w]; simp only [function.comp_app, conj_eq_zero],
+        exact this sub,
+      end,
+      rcases quick2 minor₂ (fderiv ℂ g z).to_linear_map.is_linear with ⟨c, hc, lie, h'⟩,
+      simp only [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
+                 continuous_linear_equiv.coe_coe, function.comp_app,
+                 conj_cle_apply, continuous_linear_map.coe_restrict_scalars'] at h',
+      have minor₃ : ⇑conj_cle = conj := by funext x; exact conj_cle_apply x,
+      rw [minor₃, ← minor₁] at h',
+      exact ⟨f', ⟨h.has_fderiv_at, c, hc, lie, h'⟩⟩,
     },
   },
   {
-    intros H, rcases H with ⟨f', c, hc, lie, hf', H'⟩,
+    intros H, rcases H with ⟨f', hf', H'⟩,
     let minor := hf'.fderiv.symm,
-    rcases quick3 ⟨c, hc, lie, H'⟩ with ⟨h₁, h₂⟩,
+    rcases quick3 H' with ⟨h₁, h₂⟩,
     cases h₁,
     {
       have : fderiv ℝ f z 1 ≠ 0 := λ w,
