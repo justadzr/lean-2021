@@ -1,4 +1,4 @@
-import analysis.complex.basic
+
 import analysis.complex.isometry
 import analysis.normed_space.inner_product
 import conformal
@@ -44,11 +44,11 @@ lemma conformal_conj_complex_linear (hz : (g : ℂ → ℂ) ≠ λ x, (0 : ℂ))
   is_conformal_map (conj_cle.to_continuous_linear_map.comp g) :=
 begin
   rcases conformal_complex_linear hz h with ⟨c, hc, lie, hg'⟩,
-  simp only [continuous_linear_map.coe_restrict_scalars'] at hg',
+  --simp only [continuous_linear_map.coe_restrict_scalars'] at hg',
   exact ⟨c, hc, lie.trans conj_lie, by
   { rw [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
         continuous_linear_equiv.coe_coe, hg'],
-    funext, simp only [function.comp_app, conj_cle_apply],
+    funext, simp only [function.comp_app, conj_cle_apply, pi.smul_apply],
     rw [← complex.conj_lie_apply, conj_lie.map_smul, linear_isometry_equiv.coe_trans], }⟩,
 end
 
@@ -63,8 +63,8 @@ begin
     cases ha,
     { have : is_linear_map ℂ g :=
       { map_add := g.map_add,
-        map_smul := λ c₁ x₁, by rw [hg, ha]; simp only [function.comp_app, 
-                    rotation_apply, smul_eq_mul, smul_coe]; ring, },
+        map_smul := λ c₁ x₁, by rw [hg, ha]; 
+                    simp only [pi.smul_apply, rotation_apply, smul_eq_mul, smul_coe]; ring, },
       exact or.intro_left _ this, },
     { have : ∃ (g' : ℂ →L[ℂ] ℂ), (g : ℂ → ℂ) = conj ∘ g' :=
       begin
@@ -73,7 +73,7 @@ begin
         have : (g : ℂ → ℂ) = conj ∘ map :=
         begin
           funext, rw [hg, ha], 
-          simp only [function.comp_app, linear_isometry_equiv.coe_trans, 
+          simp only [function.comp_app, pi.smul_apply, linear_isometry_equiv.coe_trans, 
                      conj_lie_apply, rotation_apply],
           simp only [smul_coe, smul_eq_mul, function.comp_app, continuous_linear_map.smul_apply, 
                      map, is_linear_map.mk'_apply, linear_map.coe_to_continuous_linear_map', 
@@ -84,7 +84,7 @@ begin
       exact or.intro_right _ this, }, },
   { intros w, suffices new : ∥g 1∥ = 0,
     { have : ∥g 1∥ = ∥c∥ := by rw function.funext_iff at hg;
-        rw [hg 1, function.comp_app, norm_smul, lie.norm_map, norm_one, mul_one],
+        rw [hg 1, pi.smul_apply, norm_smul, lie.norm_map, norm_one, mul_one],
       rw this at new, exact hc (norm_eq_zero.mp new), },
     { rw [w], simp only [function.app], exact norm_zero, }, },
 end
