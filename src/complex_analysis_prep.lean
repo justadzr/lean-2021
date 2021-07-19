@@ -62,7 +62,7 @@ begin
   rcases hz o (is_open.mem_nhds ho hxo) with ⟨v, hv₁, hv₂⟩,
   use v,
   rw set.inter_comm at hv₁,
-  exact hv₁
+  exact hv₁,
 end
 
 end accuml_pts
