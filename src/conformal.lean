@@ -12,12 +12,6 @@ noncomputable theory
 
 section conformal
 
--- Should the field `𝕜` here be `is_R_or_C` or just simply `ℝ`?
-
-/-!
-Failed to build conformal maps on general `inner_product_space`. Instead, focus on Euclidean spaces.
--/
-
 def is_conformal_map {X Y : Type*} 
 [inner_product_space ℝ X] [inner_product_space ℝ Y] (f' : X →L[ℝ] Y) :=
 ∃ (c : ℝ) (hc : c ≠ 0) (lie : X ≃ₗᵢ[ℝ] Y), ⇑f' = (λ y, c • y) ∘ lie
@@ -193,7 +187,7 @@ theorem quick0 (a : circle) : is_linear_map ℂ (rotation a) :=
 }
 
 -- Is the statement `is_linear_map ℂ g` the best way to say `g` is `ℂ`-linear?
-lemma quick1 (hz : ⇑g ≠ (λ x, (0 : ℂ))) :
+lemma quick1 (hz : ⇑g ≠ λ x, (0 : ℂ)) :
 is_linear_map ℂ g → is_conformal_map g :=
 begin
   intro h,
@@ -216,7 +210,7 @@ begin
 end
 
 -- ℂ-antilinear or being the conjugate of a ℂ-linear map?
-lemma quick2 (hz : ⇑g ≠ (λ x, (0 : ℂ))) :
+lemma quick2 (hz : ⇑g ≠ λ x, (0 : ℂ)) :
 is_linear_map ℂ g  → is_conformal_map (conj_cle.to_continuous_linear_map.comp g) :=
 begin
   intro h,

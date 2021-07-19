@@ -12,12 +12,6 @@ noncomputable theory
 
 section conformal
 
--- Should the field `𝕜` here be `is_R_or_C` or just simply `ℝ`?
-
-/-!
-Failed to build conformal maps on general `inner_product_space`. Instead, focus on Euclidean spaces.
--/
-
 def conformal_at 
 {X Y : Type*} [inner_product_space ℝ X] [inner_product_space ℝ Y] 
 (f : X → Y) (x : X) :=
