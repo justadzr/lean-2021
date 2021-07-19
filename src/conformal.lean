@@ -33,13 +33,15 @@ differentiable_at ℝ f x := let ⟨f', h₁, c, hc, lie, h₂⟩ := h in h₁.d
 theorem conformal.differentiable {f : X → Y} (h : conformal f) :
 differentiable ℝ f := λ x, (h x).differentiable_at
 
+open linear_isometry_equiv continuous_linear_map
+
 theorem conformal_at.id (x : X) : conformal_at id x := 
-⟨continuous_linear_map.id ℝ X, ⟨has_fderiv_at_id _, 1, one_ne_zero, linear_isometry_equiv.refl ℝ X, by ext; simp only [function.comp_app, linear_isometry_equiv.coe_refl, id, one_smul, continuous_linear_map.id_apply]⟩⟩
+⟨id ℝ X, has_fderiv_at_id _, 1, one_ne_zero, refl ℝ X, by ext; simp⟩
 
 theorem conformal.id : conformal (id : X → X) := λ x, conformal_at.id x
 
 theorem conformal_at.const_smul {c : ℝ} (h : c ≠ 0) (x : X) : conformal_at (λ (x': X), c • x') x :=
-⟨c • continuous_linear_map.id ℝ X, ⟨by apply has_fderiv_at.const_smul (has_fderiv_at_id x) c, c, h, linear_isometry_equiv.refl ℝ X, by ext; simp only [linear_isometry_equiv.coe_refl, id, continuous_linear_map.id_apply, continuous_linear_map.smul_apply, function.comp_app]⟩⟩
+⟨c • id ℝ X, by apply has_fderiv_at.const_smul (has_fderiv_at_id x) c, c, h, refl ℝ X, by ext; simp⟩
 
 theorem conformal.const_smul {c : ℝ} (h : c ≠ 0) : 
 conformal (λ (x : X), c • x) := λ x, conformal_at.const_smul h x
@@ -74,7 +76,7 @@ begin
     rw [← continuous_linear_equiv.coe_coe f', 
         ← continuous_linear_equiv.coe_def_rev f', has_fderiv_at.unique h h₁, h₂],
     simp only [function.comp_apply, real_inner_smul_left, real_inner_smul_right, 
-               linear_isometry_equiv.inner_map_map],
+               inner_map_map],
     rw [← mul_assoc, pow_two],
   },
   {
@@ -94,7 +96,7 @@ begin
           real_inner_smul_right, huv u v, ← mul_assoc, ← mul_assoc, 
           real.mul_self_sqrt $ le_of_lt $ inv_pos.mpr hc₁, 
           inv_mul_cancel $ ne_of_gt hc₁, one_mul],
-    exact ⟨f'.to_continuous_linear_map, ⟨h, c⁻¹, inv_ne_zero hc, f₁.isometry_of_inner key, minor'⟩⟩,
+    exact ⟨f'.to_continuous_linear_map, h, c⁻¹, inv_ne_zero hc, f₁.isometry_of_inner key, minor'⟩,
   },
 end
 
@@ -157,7 +159,7 @@ begin
     use [u, hu.mem_nhds hx],
     exact h,
   end,
-  exact ⟨f', ⟨this, c, hc, lie, h₂⟩⟩,
+  exact ⟨f', this, c, hc, lie, h₂⟩,
 end
 
 def conformal_pregroupoid : pregroupoid E :=
@@ -176,7 +178,7 @@ end conformal_groupoid
 -- TODO : rename and polish
 section complex_conformal
 
-open complex
+open complex linear_isometry_equiv continuous_linear_map
 
 variables {f : ℂ → ℂ} {z : ℂ} {g : ℂ →L[ℝ] ℂ}
 
@@ -349,7 +351,7 @@ begin
     cases H₁,
     { 
       rcases quick1 this (quick_complex_linear H₁) with ⟨c, hc, lie, h'⟩,
-      exact ⟨f', ⟨h.has_fderiv_at, c, hc, lie, h'⟩⟩,
+      exact ⟨f', h.has_fderiv_at, c, hc, lie, h'⟩,
     },
     { 
       rcases H₁ with ⟨g, hg, hfg⟩,
@@ -371,7 +373,7 @@ begin
                  conj_cle_apply, continuous_linear_map.coe_restrict_scalars'] at h',
       have minor₃ : ⇑conj_cle = conj := by funext x; exact conj_cle_apply x,
       rw [minor₃, ← minor₁] at h',
-      exact ⟨f', ⟨h.has_fderiv_at, c, hc, lie, h'⟩⟩,
+      exact ⟨f', h.has_fderiv_at, c, hc, lie, h'⟩,
     },
   },
   {
