@@ -1,7 +1,6 @@
 
 import analysis.complex.isometry
-import analysis.normed_space.inner_product
-import conformal
+import analysis.calculus.conformal
 
 noncomputable theory
 
@@ -16,7 +15,7 @@ theorem complex_linear_rotation (a : circle) : is_linear_map ℂ (rotation a) :=
   map_smul := λ s x, by simp only [rotation_apply, smul_eq_mul, mul_assoc, mul_comm], }
 
 -- Is the statement `is_linear_map ℂ g` the best way to say `g` is `ℂ`-linear?
-lemma conformal_complex_linear (hz : (g : ℂ → ℂ) ≠ λ x, (0 : ℂ)) (h : is_linear_map ℂ g) :
+lemma conformal_complex_linear (hz : (g : ℂ → ℂ) ≠ function.const ℂ 0) (h : is_linear_map ℂ g) :
   is_conformal_map g :=
 begin
   let c := ∥g 1∥,
@@ -36,26 +35,26 @@ begin
         mul_one, mul_comm],
   end,
   exact ⟨c, ne_of_gt (norm_pos_iff.mpr minor₂), 
-        (rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩), key⟩,
+        (rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩).to_linear_isometry, key⟩,
 end
 
 -- ℂ-antilinear or being the conjugate of a ℂ-linear map?
-lemma conformal_conj_complex_linear (hz : (g : ℂ → ℂ) ≠ λ x, (0 : ℂ)) (h : is_linear_map ℂ g) :
+lemma conformal_conj_complex_linear (hz : (g : ℂ → ℂ) ≠ function.const ℂ 0) (h : is_linear_map ℂ g) :
   is_conformal_map (conj_cle.to_continuous_linear_map.comp g) :=
 begin
-  rcases conformal_complex_linear hz h with ⟨c, hc, lie, hg'⟩,
-  --simp only [continuous_linear_map.coe_restrict_scalars'] at hg',
-  exact ⟨c, hc, lie.trans conj_lie, by
+  rcases conformal_complex_linear hz h with ⟨c, hc, li, hg'⟩,
+  exact ⟨c, hc, li.comp conj_lie.to_linear_isometry, by
   { rw [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
         continuous_linear_equiv.coe_coe, hg'],
     funext, simp only [function.comp_app, conj_cle_apply, pi.smul_apply],
-    rw [← complex.conj_lie_apply, conj_lie.map_smul, linear_isometry_equiv.coe_trans], }⟩,
+    simp only [← complex.conj_lie_apply, conj_lie.map_smul, 
+               linear_isometry.coe_comp, function.comp_app, linear_isometry_equiv.coe_to_linear_isometry, conj_lie_apply]}⟩,
 end
 
 -- ℂ-antilinear or being the conjugate of a ℂ-linear map?
 lemma complex_linear_or_conj_if_conformal (h : is_conformal_map g) :
   (is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), (g : ℂ → ℂ) = conj ∘ g') ∧
-  (g : ℂ → ℂ) ≠ λ x, (0 : ℂ) :=
+  (g : ℂ → ℂ) ≠ function.const ℂ 0 :=
 begin
   rcases h with ⟨c, hc, lie, hg⟩,
   split,
