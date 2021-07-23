@@ -1,4 +1,3 @@
-
 import analysis.complex.isometry
 import analysis.calculus.conformal
 
@@ -6,72 +5,113 @@ noncomputable theory
 
 section complex_conformal
 
-open complex linear_isometry_equiv continuous_linear_map
+open complex linear_isometry linear_isometry_equiv continuous_linear_map 
+     finite_dimensional linear_map
 
 variables {f : ℂ → ℂ} {z : ℂ} {g : ℂ →L[ℝ] ℂ}
 
-theorem complex_linear_rotation (a : circle) : is_linear_map ℂ (rotation a) :=
+lemma is_complex_linear_rotation (a : circle) : is_linear_map ℂ (rotation a) :=
 { map_add := (rotation a).map_add,
   map_smul := λ s x, by simp only [rotation_apply, smul_eq_mul, mul_assoc, mul_comm], }
 
 -- Is the statement `is_linear_map ℂ g` the best way to say `g` is `ℂ`-linear?
-lemma conformal_complex_linear (hz : (g : ℂ → ℂ) ≠ function.const ℂ 0) (h : is_linear_map ℂ g) :
+lemma is_conformal_map_is_complex_linear (nonzero : (g : ℂ → ℂ) ≠ 0) (h : is_linear_map ℂ g) :
   is_conformal_map g :=
 begin
-  let c := ∥g 1∥,
   have minor₁ : ∀ (x : ℂ), x = x • 1 := λ x, by simp only [smul_eq_mul, mul_one],
-  have minor₂ : g 1 ≠ 0 := λ w, let p : (g : ℂ → ℂ) = (λ x, (0 : ℂ)) := 
-    by funext; nth_rewrite 0 minor₁ x; simp only [h.map_smul, w, smul_zero] in hz p,
-  have minor₃ : complex.abs ((g 1) / c) = 1 := by simp only [complex.abs_div, abs_of_real]; 
-    simp_rw [c]; simp only [norm_eq_abs, complex.abs_abs, div_self (abs_ne_zero.mpr minor₂)],
-  have key : (g : ℂ → ℂ) = c • (rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩) :=
+  have minor₂ : ∥g 1∥ ≠ 0 := λ w, let p : (g : ℂ → ℂ) = function.const ℂ 0 := 
+      by funext; nth_rewrite 0 minor₁ x; simp only [h.map_smul, norm_eq_zero.mp w, smul_zero] 
+    in nonzero p,
+  have minor₃ : complex.abs ((g 1) / ∥g 1∥) = 1 := by simp only [complex.abs_div, abs_of_real]; 
+    simp only [← norm_eq_abs, abs_norm_eq_norm, div_self minor₂],
+  have key : (g : ℂ → ℂ) = ∥g 1∥ • rotation ⟨(g 1) / ∥g 1∥, (mem_circle_iff_abs _).mpr minor₃⟩ :=
   begin
     funext, simp only [pi.smul_apply, rotation_apply],
     nth_rewrite 0 minor₁ x,
-    simp only [c, h.map_smul],
+    simp only [h.map_smul], 
     simp only [smul_eq_mul, set_like.coe_mk, smul_coe],
-    rw [← mul_assoc], nth_rewrite 2 mul_comm, nth_rewrite 1 mul_assoc,
-    rw [inv_mul_cancel (of_real_ne_zero.mpr $ ne_of_gt $ norm_pos_iff.mpr minor₂), 
-        mul_one, mul_comm],
+    rw [← mul_assoc],
+    nth_rewrite 2 mul_comm,
+    nth_rewrite 1 mul_assoc,
+    rw [inv_mul_cancel (of_real_ne_zero.mpr minor₂), mul_one, mul_comm],
   end,
-  exact ⟨c, ne_of_gt (norm_pos_iff.mpr minor₂), 
-        (rotation ⟨(g 1) / c, (mem_circle_iff_abs _).mpr minor₃⟩).to_linear_isometry, key⟩,
+  exact ⟨∥g 1∥, minor₂,
+        (rotation ⟨(g 1) / ∥g 1∥, (mem_circle_iff_abs _).mpr minor₃⟩).to_linear_isometry, key⟩,
 end
 
 -- ℂ-antilinear or being the conjugate of a ℂ-linear map?
-lemma conformal_conj_complex_linear (hz : (g : ℂ → ℂ) ≠ function.const ℂ 0) (h : is_linear_map ℂ g) :
+lemma is_conformal_map_conj_is_complex_linear (nonzero : (g : ℂ → ℂ) ≠ 0) (h : is_linear_map ℂ g) : 
   is_conformal_map (conj_cle.to_continuous_linear_map.comp g) :=
 begin
-  rcases conformal_complex_linear hz h with ⟨c, hc, li, hg'⟩,
-  exact ⟨c, hc, li.comp conj_lie.to_linear_isometry, by
-  { rw [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
+  rcases is_conformal_map_is_complex_linear nonzero h with ⟨c, hc, li, hg'⟩,
+  refine ⟨c, hc, conj_lie.to_linear_isometry.comp li, _⟩,
+  rw [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
         continuous_linear_equiv.coe_coe, hg'],
-    funext, simp only [function.comp_app, conj_cle_apply, pi.smul_apply],
-    simp only [← complex.conj_lie_apply, conj_lie.map_smul, 
-               linear_isometry.coe_comp, function.comp_app, linear_isometry_equiv.coe_to_linear_isometry, conj_lie_apply]}⟩,
+  funext, 
+  simp only [function.comp_app, conj_cle_apply, pi.smul_apply],
+  rw [← conj_lie_apply, conj_lie.map_smul, 
+      linear_isometry.coe_comp, function.comp_app, coe_to_linear_isometry],
 end
 
--- ℂ-antilinear or being the conjugate of a ℂ-linear map?
-lemma complex_linear_or_conj_if_conformal (h : is_conformal_map g) :
-  (is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), (g : ℂ → ℂ) = conj ∘ g') ∧
-  (g : ℂ → ℂ) ≠ function.const ℂ 0 :=
+def is_conj_complex_linear (f' : ℂ → ℂ) := ∃ (g' : ℂ →L[ℂ] ℂ), (f' : ℂ → ℂ) = conj ∘ g'
+
+def antiholomorphic_at (f : ℂ → ℂ) (z : ℂ) :=
+∃ (g : ℂ → ℂ) (hg' : differentiable_at ℂ g z), f = conj ∘ g
+
+namespace linear_isometry
+
+def linear_isometry_equiv_of_finrank_eq_finrank {R X Y : Type*} 
+  [nondiscrete_normed_field R] [normed_group X] [normed_group Y] 
+  [normed_space R X] [normed_space R Y] [finite_dimensional R X] [finite_dimensional R Y]
+  (li : X →ₗᵢ[R] Y) (h : finrank R X = finrank R Y) : X ≃ₗᵢ[R] Y :=
+{ to_linear_equiv := li.to_linear_map.linear_equiv_of_ker_eq_bot 
+    ((ker_eq_bot_iff_range_eq_top_of_finrank_eq_finrank h).mpr $ 
+    range_eq_top.mpr $ (injective_iff_surjective_of_finrank_eq_finrank h).mp $ 
+    li.coe_to_linear_map ▸ li.injective) h,
+  norm_map' := li.norm_map', }
+
+lemma coe_linear_isometry_equiv_of_finrank_eq_finrank
+  {R X Y : Type*} [nondiscrete_normed_field R] [normed_group X] [normed_group Y] 
+  [normed_space R X] [normed_space R Y] [finite_dimensional R X] [finite_dimensional R Y]
+  (li : X →ₗᵢ[R] Y) (h : finrank R X = finrank R Y) : 
+  (li.linear_isometry_equiv_of_finrank_eq_finrank h : X → Y) = li :=
 begin
-  rcases h with ⟨c, hc, lie, hg⟩,
+  rw ← coe_to_linear_equiv, 
+  funext,
+  simp only [linear_isometry_equiv_of_finrank_eq_finrank, linear_equiv_of_ker_eq_bot_apply],
+  rw li.coe_to_linear_map,
+end
+
+lemma linear_isometry_equiv_of_finrank_eq_finrank_apply
+  {R X Y : Type*} [nondiscrete_normed_field R] [normed_group X] [normed_group Y] 
+  [normed_space R X] [normed_space R Y] [finite_dimensional R X] [finite_dimensional R Y]
+  (li : X →ₗᵢ[R] Y) (h : finrank R X = finrank R Y) (x : X) :
+  (li.linear_isometry_equiv_of_finrank_eq_finrank h) x = li x := 
+by rw li.coe_linear_isometry_equiv_of_finrank_eq_finrank
+
+end linear_isometry
+
+lemma is_complex_or_conj_complex_linear_of_is_conformal_map (h : is_conformal_map g) :
+  (is_linear_map ℂ g ∨ is_conj_complex_linear g) ∧ (g : ℂ → ℂ) ≠ 0 :=
+begin
+  rcases h with ⟨c, hc, li, hg⟩,
   split,
-  { rcases linear_isometry_complex lie with ⟨a, ha⟩,
+  { rcases linear_isometry_complex 
+      (li.linear_isometry_equiv_of_finrank_eq_finrank rfl) with ⟨a, ha⟩,
     cases ha,
     { have : is_linear_map ℂ g :=
       { map_add := g.map_add,
-        map_smul := λ c₁ x₁, by rw [hg, ha]; 
-                    simp only [pi.smul_apply, rotation_apply, smul_eq_mul, smul_coe]; ring, },
+        map_smul := λ c₁ x₁, by rw [hg, ← li.coe_linear_isometry_equiv_of_finrank_eq_finrank, ha]; 
+          simp only [pi.smul_apply, rotation_apply, smul_eq_mul, smul_coe]; ring, },
       exact or.intro_left _ this, },
     { have : ∃ (g' : ℂ →L[ℂ] ℂ), (g : ℂ → ℂ) = conj ∘ g' :=
       begin
         let map := (conj c) • (is_linear_map.mk' (rotation $ a⁻¹) $ 
-                    complex_linear_rotation $ a⁻¹).to_continuous_linear_map,
+          is_complex_linear_rotation $ a⁻¹).to_continuous_linear_map,
         have : (g : ℂ → ℂ) = conj ∘ map :=
         begin
-          funext, rw [hg, ha], 
+          funext, 
+          rw [hg, ← li.coe_linear_isometry_equiv_of_finrank_eq_finrank, ha],
           simp only [function.comp_app, pi.smul_apply, linear_isometry_equiv.coe_trans, 
                      conj_lie_apply, rotation_apply],
           simp only [smul_coe, smul_eq_mul, function.comp_app, continuous_linear_map.smul_apply, 
@@ -81,26 +121,29 @@ begin
         exact ⟨map, this⟩,
       end,
       exact or.intro_right _ this, }, },
-  { intros w, suffices new : ∥g 1∥ = 0,
+  { intros w, 
+    suffices new : ∥g 1∥ = 0,
     { have : ∥g 1∥ = ∥c∥ := by rw function.funext_iff at hg;
-        rw [hg 1, pi.smul_apply, norm_smul, lie.norm_map, norm_one, mul_one],
-      rw this at new, exact hc (norm_eq_zero.mp new), },
-    { rw [w], simp only [function.app], exact norm_zero, }, },
+        rw [hg 1, pi.smul_apply, norm_smul, li.norm_map, norm_one, mul_one],
+      rw this at new,
+      exact hc (norm_eq_zero.mp new), },
+    { rw w, rw [pi.zero_apply], exact norm_zero, }, },
 end
 
-lemma fderiv_eq (h : differentiable_at ℂ f z) :
+lemma fderiv_eq_fderiv_of_holomorph (h : differentiable_at ℂ f z) :
   (fderiv ℝ f z : ℂ → ℂ) = fderiv ℂ f z :=
 by rw (h.restrict_scalars ℝ).has_fderiv_at.unique (h.has_fderiv_at.restrict_scalars ℝ);
-  simp only [continuous_linear_map.coe_restrict_scalars']
+  simp only [coe_restrict_scalars']
 
-lemma complex_linear_real_fderiv (h : differentiable_at ℂ f z) :
+lemma is_complex_linear_of_holomorph (h : differentiable_at ℂ f z) :
   is_linear_map ℂ (fderiv ℝ f z) :=
-by refine is_linear_map.mk (fderiv ℝ f z).map_add _; rw fderiv_eq h; exact (fderiv ℂ f z).map_smul
+by refine is_linear_map.mk (fderiv ℝ f z).map_add _; rw fderiv_eq_fderiv_of_holomorph h; 
+  exact (fderiv ℂ f z).map_smul
 
 lemma fderiv_conj (z : ℂ) : has_fderiv_at conj conj_cle.to_continuous_linear_map z := 
 conj_cle.has_fderiv_at
 
-lemma conj_fderiv_eq_fderiv_conj' (z z' : ℂ) (h : differentiable_at ℝ f z) : 
+lemma conj_fderiv_eq_fderiv_conj' {z : ℂ} (z' : ℂ) (h : differentiable_at ℝ f z) : 
   (fderiv ℝ f z z').conj = fderiv ℝ (conj ∘ f) z z' :=
 begin
   rw fderiv.comp z (fderiv_conj $ f z).differentiable_at h,
@@ -109,25 +152,25 @@ begin
       continuous_linear_equiv.coe_apply, conj_cle_apply],
 end
 
-lemma conj_fderiv_eq_fderiv_conj (z : ℂ) (h : differentiable_at ℝ f z) : 
+lemma conj_fderiv_eq_fderiv_conj {z : ℂ} (h : differentiable_at ℝ f z) : 
   conj ∘ fderiv ℝ f z = fderiv ℝ (conj ∘ f) z := 
-by funext; simp only [function.comp_app]; rw conj_fderiv_eq_fderiv_conj' z x h
+by funext; simp only [function.comp_app]; rw conj_fderiv_eq_fderiv_conj' x h
 
 lemma eq_smul_one (x : ℂ) : x = x • 1 := by simp only [smul_eq_mul, mul_one]
 
-lemma holomorph_congr {f' : ℂ →L[ℝ] ℂ} {g' : ℂ →L[ℂ] ℂ} 
+lemma fderiv_congr_of_holomorph {f' : ℂ →L[ℝ] ℂ} {g' : ℂ →L[ℂ] ℂ} 
   (h : has_fderiv_at f f' z) (h' : (f' : ℂ → ℂ) = g') : has_fderiv_at f g' z :=
 by simp only [has_fderiv_at, has_fderiv_at_filter] at h ⊢; rw ← h'; exact h
 
 -- Not sure if we need this lemma since eventually we will split it
-theorem holomorph_or_anti_iff_conformal_aux:
-  is_conformal_map g ↔ (is_linear_map ℂ g ∨ ∃ (g' : ℂ →L[ℂ] ℂ), (g : ℂ → ℂ) = conj ∘ g') ∧
-(g : ℂ → ℂ) ≠ λ x, (0 : ℂ) :=
+lemma holomorph_or_anti_of_fderiv_ne_zero_iff_conformal_aux:
+  is_conformal_map g ↔ (is_linear_map ℂ g ∨ is_conj_complex_linear g) ∧
+ (g : ℂ → ℂ) ≠ 0 :=
 begin
   split,
-  { exact complex_linear_or_conj_if_conformal, },
+  { exact is_complex_or_conj_complex_linear_of_is_conformal_map, },
   { rintros ⟨h₁, h₂⟩, cases h₁,
-    { exact conformal_complex_linear h₂ h₁, },
+    { exact is_conformal_map_is_complex_linear h₂ h₁, },
     { rcases h₁ with ⟨g', hg'⟩, 
       have minor₁ : g = conj_cle.to_continuous_linear_map.comp (g'.restrict_scalars ℝ) :=
       begin 
@@ -139,91 +182,62 @@ begin
       end,
       have minor₂ : is_linear_map ℂ (g'.restrict_scalars ℝ) := 
         by rw continuous_linear_map.coe_restrict_scalars'; exact g'.to_linear_map.is_linear,
-      have minor₃ : (g'.restrict_scalars ℝ : ℂ → ℂ) ≠ λ x, (0 : ℂ) := λ w,
-      begin
+      have minor₃ : (g'.restrict_scalars ℝ : ℂ → ℂ) ≠ 0 := 
+      λ w, begin
         rw continuous_linear_map.coe_restrict_scalars' at w,
-        have : (g : ℂ → ℂ) = λ x, (0 : ℂ) := 
-          by funext; rw [hg', w]; simp only [function.comp_app, conj_eq_zero],
+        have : (g : ℂ → ℂ) = 0 := 
+          by funext; rw [hg', w]; simp only [function.comp_app, conj_eq_zero, pi.zero_apply],
         exact h₂ this,
       end,
-      exact minor₁.symm ▸ (conformal_conj_complex_linear minor₃ minor₂), }, },
+      exact minor₁.symm ▸ (is_conformal_map_conj_is_complex_linear minor₃ minor₂), }, },
 end
 
-theorem holomorph_or_anti_iff_conformal_at (h : differentiable_at ℝ f z) :
-  ((differentiable_at ℂ f z ∨ ∃ (g : ℂ → ℂ) (hg : differentiable_at ℂ g z), f = conj ∘ g) ∧
-  fderiv ℝ f z 1 ≠ 0) ↔ conformal_at f z :=
+lemma is_complex_or_conj_complex_linear (hf : differentiable_at ℝ f z) :
+  (differentiable_at ℂ f z ∨ antiholomorphic_at f z) ↔
+  is_linear_map ℂ (fderiv ℝ f z) ∨ is_conj_complex_linear (fderiv ℝ f z) :=
 begin
   split,
-  { rintros ⟨H₁, H₂⟩, 
-    let f' := fderiv ℝ f z,
-    have : (f' : ℂ → ℂ) ≠ λ x, (0 : ℂ) := λ w, 
-      by rw w at H₂; simp only [function.app] at H₂; exact H₂ rfl,
-    cases H₁,
-    { rcases conformal_complex_linear this (complex_linear_real_fderiv H₁) with ⟨c, hc, lie, h'⟩,
-      exact ⟨f', h.has_fderiv_at, c, hc, lie, h'⟩, },
-    { rcases H₁ with ⟨g, hg, hfg⟩,
-      have minor₁: (f' : ℂ → ℂ) = conj ∘ (fderiv ℂ g z) :=
-      begin
-        funext, simp only [function.comp_app],
-        let q := conj_fderiv_eq_fderiv_conj' z x (hg.restrict_scalars ℝ),
-        rw fderiv_eq hg at q, simp only [f', hfg], rw q,
-      end,
-      have minor₂ : ((fderiv ℂ g z).restrict_scalars ℝ : ℂ → ℂ) ≠ λ x, (0 : ℂ) := λ w,
-      begin
-        rw continuous_linear_map.coe_restrict_scalars' at w,
-        have sub : (f' : ℂ → ℂ) = λ x, (0 : ℂ) := by funext; rw [minor₁, w]; 
-          simp only [function.comp_app, conj_eq_zero],
-        exact this sub,
-      end,
-      rcases conformal_conj_complex_linear minor₂ (fderiv ℂ g z).to_linear_map.is_linear 
-        with ⟨c, hc, lie, h'⟩,
-      simp only [continuous_linear_map.coe_comp', continuous_linear_equiv.coe_def_rev, 
-                 continuous_linear_equiv.coe_coe, function.comp_app,
-                 conj_cle_apply, continuous_linear_map.coe_restrict_scalars'] at h',
-      have minor₃ : (conj_cle : ℂ → ℂ) = conj := by funext x; exact conj_cle_apply x,
-      rw [minor₃, ← minor₁] at h',
-      exact ⟨f', h.has_fderiv_at, c, hc, lie, h'⟩, }, },
-  { intros H, rcases H with ⟨f', hf', H'⟩,
-    let minor := hf'.fderiv.symm,
-    rcases complex_linear_or_conj_if_conformal H' with ⟨h₁, h₂⟩,
-    cases h₁,
-    { have : fderiv ℝ f z 1 ≠ 0 := λ w,
-      begin
-        rw minor at h₁ h₂,
-        have : (fderiv ℝ f z : ℂ → ℂ) = λ (x : ℂ), (0 : ℂ) :=
-        begin
-          funext, rw eq_smul_one x, simp only [h₁.map_smul, w, smul_zero],
-        end,
-        exact h₂ this,
-      end,
-      exact ⟨or.intro_left _ ⟨(is_linear_map.mk' f' h₁).to_continuous_linear_map, hf'⟩, this⟩, },
-    { rcases h₁ with ⟨g', hg'⟩, rw minor at h₂ hg',
-      have minor' : (g' : ℂ → ℂ) = conj ∘ f' := by rw [minor, hg']; 
-        funext; simp only [function.comp_app, conj_conj],
-      have : fderiv ℝ f z 1 ≠ 0 := λ w,
-      begin
-        have : (fderiv ℝ f z : ℂ → ℂ) = λ (x : ℂ), (0 : ℂ) :=
-        begin
-          funext, rw [eq_smul_one x, hg'], simp only [function.comp_app, g'.map_smul],
-          simp only [smul_eq_mul, conj.map_mul], 
-          rw [← function.comp_app conj g' 1, ← hg', w, mul_zero],
-        end,
-        exact h₂ this,
-      end,
-      have key : ∃ (g : ℂ → ℂ) (hg : differentiable_at ℂ g z), f = conj ∘ g :=
-      begin
-        let g := conj ∘ f,
-        have sub₁ : f = conj ∘ g := by funext; simp only [function.comp_app, conj_conj],
-        let Hf := differentiable_at.comp z conj_cle.differentiable_at h,
-        have sub₂ : (conj_cle : ℂ → ℂ) = conj := by funext; rw conj_cle_apply,
-        rw sub₂ at Hf,
-        let Hg' := Hf.has_fderiv_at,
-        have sub₃ : (fderiv ℝ (conj ∘ f) z : ℂ → ℂ) = g':= 
-          by rw [← conj_fderiv_eq_fderiv_conj z h, ← minor, ← minor'],
-        exact ⟨g, ⟨g', holomorph_congr Hg' sub₃⟩, sub₁⟩,
-      end,
-      exact ⟨or.intro_right _ key, this⟩, }, },
+  { intros h,
+    cases h,
+    { exact or.intro_left _ (is_complex_linear_of_holomorph h), },
+    { simp only [antiholomorphic_at] at h,
+      rcases h with ⟨g', hg', hg⟩,
+      rw [hg, ← conj_fderiv_eq_fderiv_conj (hg'.restrict_scalars ℝ), 
+        fderiv_eq_fderiv_of_holomorph hg'],
+      exact or.intro_right _ ⟨fderiv ℂ g' z, rfl⟩, }, },
+  { intros h,
+    cases h,
+    { exact or.intro_left _ 
+      ⟨(is_linear_map.mk' (fderiv ℝ f z) h).to_continuous_linear_map, hf.has_fderiv_at⟩, }, 
+    { refine or.intro_right _ _,
+      simp only [antiholomorphic_at], simp only [is_conj_complex_linear] at h, 
+      let g := conj ∘ f,
+      have minor₁ : (fderiv ℝ g z : ℂ → ℂ) = conj ∘ (fderiv ℝ f z) :=
+        by simp only [g, conj_fderiv_eq_fderiv_conj hf],
+      have minor₂ : conj_cle ∘ f = g := by funext;
+        simp only [function.comp_app, conj_cle_apply],
+      refine ⟨g, _, by funext; simp only [function.comp_app, g, conj_conj]⟩,
+      rcases h with ⟨g', hg'⟩,
+      have key : (fderiv ℝ g z : ℂ → ℂ) = g' := by funext;
+        simp only [function.comp_app, hg', minor₁, conj_conj],
+      let Hf := differentiable_at.comp z conj_cle.differentiable_at hf,
+      rw minor₂ at Hf,
+      exact ⟨g', fderiv_congr_of_holomorph Hf.has_fderiv_at key⟩, }, },
 end
+
+lemma holomorph_or_anti_iff_conformal_at' (h : differentiable_at ℝ f z) :
+  ((differentiable_at ℂ f z ∨ antiholomorphic_at f z) ∧
+  (fderiv ℝ f z : ℂ → ℂ) ≠ 0) ↔ conformal_at f z :=
+by rw [is_complex_or_conj_complex_linear h,
+       ← holomorph_or_anti_of_fderiv_ne_zero_iff_conformal_aux, 
+       conformal_at_iff_is_conformal_map_fderiv]
+
+-- lemma holomorph_or_anti_iff_conformal_at (h : differentiable_at ℝ f z) :
+--   ((differentiable_at ℂ f z ∨ antiholomorphic_at f z) ∧
+--   fderiv ℝ f z 1 ≠ 0) ↔ conformal_at f z :=
+-- begin
+--   have : fderiv ℝ f z 1 ≠ 0 ↔ (fderiv ℝ f z : ℂ → ℂ) ≠ 0
+-- end
 
 end complex_conformal
 
