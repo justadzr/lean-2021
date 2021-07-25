@@ -34,21 +34,6 @@ variables {f : ℂ → ℂ} {z : ℂ} {g : ℂ →L[ℝ] ℂ}
 open complex linear_isometry linear_isometry_equiv continuous_linear_map
      finite_dimensional linear_map
 
-lemma fderiv_eq_fderiv_of_holomorph (h : differentiable_at ℂ f z) :
-  (fderiv ℝ f z : ℂ → ℂ) = fderiv ℂ f z :=
-sorry
-
-lemma has_fderiv_at_of_eq {f' : ℂ →L[ℝ] ℂ} {g' : ℂ →L[ℂ] ℂ}
-  (h : has_fderiv_at f f' z) (h' : (f' : ℂ → ℂ) = g') : has_fderiv_at f g' z :=
-sorry
-
-lemma has_fderiv_at_conj (z : ℂ) : has_fderiv_at conj conj_cle.to_continuous_linear_map z :=
-conj_cle.has_fderiv_at
-
-lemma conj_fderiv_eq_fderiv_conj {z : ℂ} (h : differentiable_at ℝ f z) :
-  conj ∘ fderiv ℝ f z = fderiv ℝ (conj ∘ f) z :=
-sorry
-
 lemma is_complex_linear_iff_holomorph (hf : differentiable_at ℝ f z) :
   differentiable_at ℂ f z ↔ is_linear_map ℂ (fderiv ℝ f z) :=
 sorry
@@ -154,13 +139,23 @@ iff.intro
     exact is_conformal_map_of_conj h.2 h₂, })
   (λ h, is_complex_or_conj_complex_linear h)
 
-lemma
-
-lemma conformal_at_iff_holomorphic_or_antiholomorph :
+lemma conformal_at_iff_holomorphic_or_antiholomorph_aux (hf : differentiable_at ℝ f z) :
   conformal_at f z ↔
-  (differentiable_at ℂ f z ∨ differentiable_at ℂ (conj ∘ f) z) ∧ (fderiv ℝ f z ≠ 0) :=
-begin
+  (differentiable_at ℂ f z ∨ differentiable_at ℂ (conj ∘ f) z) ∧ (fderiv ℝ f z : ℂ → ℂ) ≠ 0 :=
+by rw [conformal_at_iff_is_conformal_map_fderiv, 
+      ← is_complex_or_conj_complex_linear_iff_is_conformal_map, 
+      is_complex_linear_iff_holomorph hf, is_conj_complex_linear_iff_antiholomorph hf]
 
-end
+lemma conformal_at_iff_holomorphic_or_antiholomorphic :
+  conformal_at f z ↔
+  (differentiable_at ℂ f z ∨ differentiable_at ℂ (conj ∘ f) z) ∧ (fderiv ℝ f z : ℂ → ℂ) ≠ 0 :=
+iff.intro
+  (λ h, (conformal_at_iff_holomorphic_or_antiholomorph_aux h.differentiable_at).mp h)
+  (λ h, by 
+    { have : differentiable_at ℝ f z := 
+        by_contra (λ w, h.2 $ function.funext_iff.mpr 
+          $ continuous_linear_map.ext_iff.mp 
+          $ fderiv_zero_of_not_differentiable_at w),
+    exact (conformal_at_iff_holomorphic_or_antiholomorph_aux this).mpr h, })
 
 end complex_conformal_linear_map
