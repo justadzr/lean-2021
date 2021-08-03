@@ -562,5 +562,17 @@ instance : connected_space rsphere :=
   λ u v hu hv hsuv hsu hsv, begin
     rw set.univ_inter at hsu hsv,
     rw is_open_rsphere_iff at hu hv,
+    by_cases h₁ : infinity ∉ u,
+    {
+      by_cases h₂ : infinity ∉ v,
+      {
+        exfalso,
+        have : infinity ∉ u ∪ v,
+        { intros w, cases w, exact h₁ w, exact h₂ w, },
+        exact set.mem_univ
+      },
+      {sorry,},
+    },
+    { sorry, },
   end,
 }
