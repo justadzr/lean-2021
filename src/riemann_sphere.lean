@@ -550,29 +550,32 @@ instance : topological_space rsphere :=
       exact key₂.inter_right key₁, },
   end, }
 
-lemma is_open_rsphere_iff {s : set rsphere} :
-  is_open s ↔ 
-  if h : infinity ∉ s then (is_open $ set_of_complex h) 
+lemma is_open_rsphere_iff_aux {s : set rsphere}:
+  is_open s ↔ if h : infinity ∉ s then (is_open $ set_of_complex h)
   else (is_compact $ compl_of_infinity $ not_not.mp h) := 
 iff.rfl
+
+lemma is_open_rsphere_iff {s : set rsphere} (h : infinity ∉ s) :
+  is_open s ↔ is_open (set_of_complex h) :=
+by rw [is_open_rsphere_iff_aux, dif_pos h]
+
+lemma is_open_rsphere_iff' {s : set rsphere} (h : ¬ infinity ∉ s) :
+  is_open s ↔ is_compact (compl_of_infinity $ not_not.mp h) :=
+by rw [is_open_rsphere_iff_aux, dif_neg h]
 
 instance : connected_space rsphere :=
 {
   is_preconnected_univ := 
   λ u v hu hv hsuv hsu hsv, begin
-    rw set.univ_inter at hsu hsv,
-    rw is_open_rsphere_iff at hu hv,
+    rw set.univ_inter at hsu hsv ⊢,
     by_cases h₁ : infinity ∉ u,
     {
       by_cases h₂ : infinity ∉ v,
-      {
-        exfalso,
+      { exfalso,
         have : infinity ∉ u ∪ v,
         { intros w, cases w, exact h₁ w, exact h₂ w, },
-        exact set.mem_univ
-      },
-      {sorry,},
-    },
+        exact ((set.univ_subset_iff.mp hsuv) ▸ this) (set.mem_univ infinity), },
+      { rw is_open_rsphere_iff' h₂ at hv, }, },
     { sorry, },
   end,
 }
