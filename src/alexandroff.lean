@@ -1,12 +1,29 @@
+/-
+Copyright (c) 2021 Yourong Zang. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Yourong Zang
+-/
 import topology.separation
 import topology.opens
-import tactic
+
+/-!
+# The Alexandroff Compactification
+We construct the Alexandroff compactification of an arbitrary topological space `X` and prove
+some properties inherited from `X`.
+
+## Main defintion
+* `alexandroff`: the Alexandroff compactification
+* `of_base`: the inclusion map defined by `option.some`. This map requires the argument
+             `topological_space X`
+* The topological structure of `alexandroff X`
+* The connectedness of `alexandroff X` for noncompact, preconnected X
+* `alexandroff X` is `T₁` for a T₁ space `X`
+* `alexandroff X` is Hausdorff if `X` is locally compact and Hausdorff
+-/
 
 noncomputable theory
-
-open_locale classical topological_space filter
-
 open filter set
+open_locale classical topological_space filter
 
 section basic
 
@@ -59,14 +76,14 @@ begin
 end
 
 instance : topological_space (alexandroff X)  :=
-{ is_open := λ s, if none ∈ s then is_compact (some⁻¹' s)ᶜ ∧ is_closed (some⁻¹' s)ᶜ 
+{ is_open := λ s, if none ∈ s then is_compact (some⁻¹' s)ᶜ ∧ is_closed (some⁻¹' s)ᶜ
     else is_open (some⁻¹' s),
-  is_open_univ := 
+  is_open_univ :=
   begin
-    rw [if_pos (mem_univ _), preimage_univ, compl_univ], 
+    rw [if_pos (mem_univ _), preimage_univ, compl_univ],
     exact ⟨is_compact_empty, is_closed_empty⟩,
   end,
-  is_open_inter := 
+  is_open_inter :=
   λ s t hs ht, begin
     split_ifs,
     { cases h with hs₁ ht₁,
@@ -89,7 +106,7 @@ instance : topological_space (alexandroff X)  :=
         { rw [if_neg H] at hs,
           exact hs.inter ht, }, }, },
   end,
-  is_open_sUnion := 
+  is_open_sUnion :=
   λ S ht, begin
     split_ifs,
     { rcases mem_sUnion.mp h with ⟨a, ha, Ha⟩,
@@ -104,7 +121,7 @@ instance : topological_space (alexandroff X)  :=
         split,
         { intros h, exact ⟨h, classical.em _⟩, },
         { intros h, exact h.1, }, },
-      rw [← preimage_compl, triv, sUnion_union, compl_union, preimage_inter, 
+      rw [← preimage_compl, triv, sUnion_union, compl_union, preimage_inter,
           compl_sUnion, preimage_compl, preimage_sUnion, sInter_eq_bInter, preimage_bInter],
       have minor₃ : ∀ t' ∈ {t | t ∈ S ∧ none ∉ t}, is_open (some⁻¹' t'),
       { intros s hs, convert ht s hs.1, rw if_neg hs.2, },
@@ -113,8 +130,8 @@ instance : topological_space (alexandroff X)  :=
       have minor₄ : ∀ t' ∈ {t | t ∈ S ∧ none ∈ t}, is_closed (some⁻¹' t')ᶜ,
       { intros s hs, specialize ht s hs.1, rw if_pos hs.2 at ht, exact ht.2, },
       have key₂ : is_closed (⋂ t ∈ compl '' {t | t ∈ S ∧ none ∈ t}, some ⁻¹' t),
-      { refine is_closed_bInter (λ s' hs', _), 
-        rcases hs' with ⟨s, hs, Hs⟩, 
+      { refine is_closed_bInter (λ s' hs', _),
+        rcases hs' with ⟨s, hs, Hs⟩,
         exact Hs ▸ (minor₄ s hs), },
       exact key₂.inter key₁, },
     { rw preimage_sUnion,
@@ -142,7 +159,7 @@ by rw [is_open_iff_of_mem h, is_closed_compl_iff]
 
 lemma is_open_iff_of_not_mem (h : none ∉ s) :
   is_open s ↔ is_open (of_base⁻¹' s) :=
-by rw [is_open_alexandroff_iff_aux, if_neg h] 
+by rw [is_open_alexandroff_iff_aux, if_neg h]
 
 lemma is_open_of_is_open (h : is_open s) :
   is_open (of_base⁻¹' s) :=
@@ -152,8 +169,8 @@ begin
   { exact (is_open_iff_of_not_mem H).mp h, },
 end
 
-instance : compact_space (alexandroff X) := 
-{ compact_univ := 
+instance : compact_space (alexandroff X) :=
+{ compact_univ :=
   begin
     refine is_compact_of_finite_subcover (λ ι Z h H, _),
     simp only [univ_subset_iff] at H ⊢,
@@ -173,13 +190,13 @@ instance : compact_space (alexandroff X) :=
     { exact ⟨K, mem_Union.mpr ⟨finset.mem_insert_self _ _, hx⟩⟩, },
     { have triv₁ : x ≠ none := (ne_of_mem_of_not_mem hK hx).symm,
       rcases option.ne_none_iff_exists.mp triv₁ with ⟨y, hy⟩,
-      have triv₂ : of_base y ∈ {x} := mem_singleton_of_eq hy,  
+      have triv₂ : of_base y ∈ {x} := mem_singleton_of_eq hy,
       rw [← mem_compl_iff, ← singleton_subset_iff] at hx,
       have : of_base⁻¹' {x} ⊆ of_base⁻¹' (Z K)ᶜ := λ y hy, hx hy,
       have key : y ∈ ⋃ (i : ι) (H : i ∈ ι'), p i := this.trans H' (mem_preimage.mpr triv₂),
       rcases mem_bUnion_iff'.mp key with ⟨i, hi, hyi⟩,
       rw [mem_preimage, of_base_eq_some, hy] at hyi,
-      exact ⟨i, mem_Union.mpr ⟨finset.subset_insert _ ι' hi, hyi⟩⟩, }, 
+      exact ⟨i, mem_Union.mpr ⟨finset.subset_insert _ ι' hi, hyi⟩⟩, },
   end }
 
 end basic
@@ -194,15 +211,15 @@ option.some_injective X
 @[continuity] lemma continuous_of_base : continuous (@of_base X _) :=
 continuous_def.mpr (λ s hs, is_open_of_is_open hs)
 
-def opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) : 
+def opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
   topological_space.opens (alexandroff X) :=
-⟨(of_base '' s)ᶜ, 
-  by { rw [is_open_iff_of_mem ((mem_compl_iff _ _).mpr $ not_mem_of_base_image _), 
+⟨(of_base '' s)ᶜ,
+  by { rw [is_open_iff_of_mem ((mem_compl_iff _ _).mpr $ not_mem_of_base_image _),
       preimage_compl, compl_compl, of_base_injective.preimage_image _], exact h, }⟩
 
 lemma none_mem_opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
   none ∈ (opens_of_compl h : set (alexandroff X)) :=
-by { simp only [opens_of_compl, topological_space.opens.coe_mk], 
+by { simp only [opens_of_compl, topological_space.opens.coe_mk],
      exact mem_compl (not_mem_of_base_image _), }
 
 lemma is_open_map_of_base : is_open_map (@of_base X _) :=
@@ -213,7 +230,7 @@ lemma is_open_map_of_base : is_open_map (@of_base X _) :=
 end
 
 lemma is_open_set_base : is_open (@set_base X _) :=
-is_open_map_of_base _ is_open_univ 
+is_open_map_of_base _ is_open_univ
 
 lemma dense_set_self (h : ¬ is_compact (univ : set X)) : dense (@set_base X _) :=
 begin
@@ -225,12 +242,12 @@ begin
       rw [not_not.mp w, of_base_preimage_none, compl_empty] at hs,
       exact h hs.1, },
     have minor₂ : of_base⁻¹' s ≠ ∅,
-    { by_contra w, 
+    { by_contra w,
       rw [not_not, eq_empty_iff_forall_not_mem] at w,
       simp only [mem_preimage] at w,
-      have : ∀ z ∈ s, z = none := λ z hz, 
-        by_contra (λ w', let ⟨x, hx⟩ := option.ne_none_iff_exists'.mp w' in 
-          by rw hx at hz; exact (w x) hz), 
+      have : ∀ z ∈ s, z = none := λ z hz,
+        by_contra (λ w', let ⟨x, hx⟩ := option.ne_none_iff_exists'.mp w' in
+          by rw hx at hz; exact (w x) hz),
       exact minor₁ (eq_singleton_iff_unique_mem.mpr ⟨H, this⟩), },
     rcases ne_empty_iff_nonempty.mp minor₂ with ⟨x, hx⟩,
     exact ⟨of_base x, hx, x, mem_univ _, rfl⟩, },
@@ -240,12 +257,12 @@ begin
     exact ⟨of_base x, hz, x, mem_univ _, rfl⟩, },
 end
 
-instance [preconnected_space X] (h : ¬ is_compact (univ : set X)) : 
+instance [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
   connected_space (alexandroff X) :=
-{ is_preconnected_univ := 
+{ is_preconnected_univ :=
   begin
     rw ← dense_iff_closure_eq.mp (dense_set_self h),
-    exact is_preconnected.closure 
+    exact is_preconnected.closure
       (is_preconnected_univ.image of_base continuous_of_base.continuous_on),
   end,
   to_nonempty := ⟨none⟩, }
@@ -254,22 +271,22 @@ instance [t1_space X] : t1_space (alexandroff X) :=
 { t1 :=
   λ z, begin
     by_cases z = none,
-    { rw [h, ← is_open_compl_iff, compl_eq_univ_diff, ← univ_eq_union_none, 
+    { rw [h, ← is_open_compl_iff, compl_eq_univ_diff, ← univ_eq_union_none,
           union_diff_cancel_right (subset.antisymm_iff.mp inter_none_eq_empty).1],
       exact is_open_set_base, },
     { rcases option.ne_none_iff_exists.mp h with ⟨x, hx⟩,
-      have minor₂ : (none : alexandroff X) ∈ {z}ᶜ := 
+      have minor₂ : (none : alexandroff X) ∈ {z}ᶜ :=
         mem_compl (λ w, (ne.symm h) (mem_singleton_iff.mp w)),
       rw [← is_open_compl_iff, is_open_iff_of_mem minor₂],
-      simp only [preimage_compl, compl_compl, ← hx, of_base, 
+      simp only [preimage_compl, compl_compl, ← hx, of_base,
                  ← image_singleton, (option.some_injective X).preimage_image _],
       exact ⟨is_compact_singleton, is_closed_singleton⟩, },
   end, }
 
 instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
-{ t2 := 
+{ t2 :=
   λ x y hxy, begin
-    have key : ∀ (x y : alexandroff X), x = none → y ≠ none → 
+    have key : ∀ (x y : alexandroff X), x = none → y ≠ none →
       ∃ (u v : set (alexandroff X)), is_open u ∧ is_open v ∧ x ∈ u ∧ y ∈ v ∧ u ∩ v = ∅ :=
     λ x y h₁ h₂, begin
       rcases option.ne_none_iff_exists.mp h₂ with ⟨y', hy'⟩,
@@ -277,7 +294,7 @@ instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
       have minor₁ : _ ∧ is_closed (closure u) := ⟨Hu, is_closed_closure⟩,
       refine ⟨opens_of_compl minor₁, of_base '' u, _⟩,
       rw h₁,
-      refine ⟨(opens_of_compl minor₁).2, is_open_map_of_base _ hu, 
+      refine ⟨(opens_of_compl minor₁).2, is_open_map_of_base _ hu,
         none_mem_opens_of_compl minor₁, ⟨y', huy', hy'⟩, _⟩,
       simp only [opens_of_compl, topological_space.opens.coe_mk],
       have minor₂ : (of_base '' closure u)ᶜ ∩ of_base '' u ⊆ (of_base '' u)ᶜ ∩ of_base '' u,
@@ -300,9 +317,9 @@ instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
       rw [← hx', ← hy'] at hxy,
       have hxy' := of_base_injective.ne_iff.mp hxy,
       rcases t2_separation hxy' with ⟨u, v, hu, hv, xu, yv, huv⟩,
-      refine ⟨of_base '' u, of_base '' v, is_open_map_of_base _ hu, is_open_map_of_base _ hv, 
+      refine ⟨of_base '' u, of_base '' v, is_open_map_of_base _ hu, is_open_map_of_base _ hv,
         ⟨x', xu, hx'⟩, ⟨y', yv, hy'⟩, _⟩,
-      simp only [image_inter of_base_injective, huv, image_empty], },    
+      simp only [image_inter of_base_injective, huv, image_empty], },
   end, }
 
 end topological
