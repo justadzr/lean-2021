@@ -30,6 +30,7 @@ open_locale classical topological_space filter
 
 section option_topology
 
+/-- The one-point extension of a topological space -/
 @[reducible]
 def one_point_extension (X : Type*) [topological_space X] :
   topological_space (option X) :=
@@ -87,6 +88,7 @@ lemma of_apply {x : X} : of x = some x := rfl
 lemma of_injective : function.injective (@of X _) :=
 option.some_injective X
 
+/-- The extra point in the extension -/
 def infty : alexandroff X := none
 
 local notation `∞` := infty
@@ -148,41 +150,7 @@ open alexandroff
 
 variables {X : Type*} [topological_space X]
 
-instance : topological_space (alexandroff X)  :=
-{ is_open := λ s, if infty ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
-    else is_open (of⁻¹' s),
-  is_open_univ := by simp,
-  is_open_inter :=
-  λ s t hs ht, begin
-    split_ifs at hs ht with h h' h' h' h,
-    { simpa [h, h', compl_inter] using and.intro (hs.1.union ht.1) (hs.2.inter ht.2) },
-    { simpa [h, h'] using hs.inter ht.2 },
-    { simpa [h, h'] using hs.2.inter ht },
-    { simpa [h, h'] using hs.inter ht }
-  end,
-  is_open_sUnion :=
-  λ S ht, begin
-    suffices : is_open (of⁻¹' ⋃₀S),
-    { split_ifs with h,
-      { obtain ⟨(a : set (alexandroff X)), ha, ha'⟩ := mem_sUnion.mp h,
-        specialize ht a ha,
-        rw if_pos ha' at ht,
-        refine ⟨compact_of_is_closed_subset ht.left this.is_closed_compl _, this⟩,
-        rw [compl_subset_compl, preimage_subset_iff],
-        intros y hy,
-        refine ⟨a, ha, hy⟩ },
-      { exact this } },
-     rw is_open_iff_forall_mem_open,
-     simp only [and_imp, exists_prop, mem_Union, preimage_sUnion, mem_preimage, of_eq_coe,
-                exists_imp_distrib],
-     intros y s hs hy,
-     refine ⟨of ⁻¹' s, subset_subset_Union _ (subset_subset_Union hs (subset.refl _)), _,
-        mem_preimage.mpr hy⟩,
-     specialize ht s hs,
-     split_ifs at ht,
-     { exact ht.right },
-     { exact ht }
-  end }
+instance : topological_space (alexandroff X) := one_point_extension X
 
 variables {s : set (alexandroff X)} {s' : set X}
 
@@ -295,7 +263,7 @@ begin
     exact ⟨of x, hz, x, mem_univ _, rfl⟩ }
 end
 
-instance [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
+lemma connected_space_alexandroff [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
   connected_space (alexandroff X) :=
 { is_preconnected_univ :=
   begin
@@ -353,5 +321,3 @@ instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
   end }
 
 end topological
-
-#lint

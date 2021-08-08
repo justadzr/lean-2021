@@ -49,8 +49,7 @@ option.some_injective X
 
 /-- The point at infinity -/
 def infty : alexandroff X := none
-
-local notation `∞` := infty
+localized "notation `∞` := infty" in alexandroff
 
 namespace alexandroff
 
@@ -63,7 +62,7 @@ lemma coe_eq_coe {x y : X} : (x : alexandroff X) = y ↔ x = y :=
 of_injective.eq_iff
 
 @[simp] lemma coe_ne_infty (x : X) : (x : alexandroff X) ≠ ∞  .
-@[simp] lemma infity_ne_coe (x : X) : ∞ ≠ (x : alexandroff X) .
+@[simp] lemma infty_ne_coe (x : X) : ∞ ≠ (x : alexandroff X) .
 @[simp] lemma of_eq_coe {x : X} : (of x : alexandroff X) = x := rfl
 
 /-- Recursor for `alexandroff` using the preferred forms `∞` and `↑x`. -/
@@ -73,7 +72,7 @@ def rec_infty_of (C : alexandroff X → Sort*) (h₁ : C infty) (h₂ : Π (x : 
 option.rec h₁ h₂
 
 lemma ne_infty_iff_exists {x : alexandroff X} : 
-  x ≠ infty ↔ ∃ (y : X), x = y :=
+  x ≠ ∞ ↔ ∃ (y : X), x = y :=
 by { induction x using alexandroff.rec_infty_of; simp }
 
 @[simp] lemma coe_mem_range_of (x : X) : (x : alexandroff X) ∈ (range_of X) :=
@@ -107,13 +106,15 @@ end alexandroff
 
 end basic
 
-section topology
 open alexandroff
+open_locale alexandroff
+
+section topology
 
 variables {X : Type*} [topological_space X]
 
-instance : topological_space (alexandroff X)  :=
-{ is_open := λ s, if infty ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
+instance : topological_space (alexandroff X) :=
+{ is_open := λ s, if ∞ ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
     else is_open (of⁻¹' s),
   is_open_univ := by simp,
   is_open_inter :=
@@ -151,26 +152,26 @@ instance : topological_space (alexandroff X)  :=
 variables {s : set (alexandroff X)} {s' : set X}
 
 lemma is_open_alexandroff_iff_aux :
-  is_open s ↔ if infty ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
+  is_open s ↔ if ∞ ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
   else is_open (of⁻¹' s) :=
 iff.rfl
 
-lemma is_open_iff_of_mem' (h : infty ∈ s) :
+lemma is_open_iff_of_mem' (h : ∞ ∈ s) :
   is_open s ↔ is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s) :=
 by simp [is_open_alexandroff_iff_aux, h]
 
-lemma is_open_iff_of_mem (h : infty ∈ s) :
+lemma is_open_iff_of_mem (h : ∞ ∈ s) :
   is_open s ↔ is_compact (of⁻¹' s)ᶜ ∧ is_closed (of⁻¹' s)ᶜ :=
 by simp [is_open_alexandroff_iff_aux, h, is_closed_compl_iff]
 
-lemma is_open_iff_of_not_mem (h : infty ∉ s) :
+lemma is_open_iff_of_not_mem (h : ∞ ∉ s) :
   is_open s ↔ is_open (of⁻¹' s) :=
 by simp [is_open_alexandroff_iff_aux, h]
 
 lemma is_open_of_is_open (h : is_open s) :
   is_open (of⁻¹' s) :=
 begin
-  by_cases H : infty ∈ s,
+  by_cases H : ∞ ∈ s,
   { simpa using ((is_open_iff_of_mem H).mp h).2 },
   { exact (is_open_iff_of_not_mem H).mp h }
 end
@@ -178,7 +179,6 @@ end
 end topology
 
 section topological_prop
-open alexandroff
 
 variables {X : Type*} [topological_space X]
 
@@ -192,7 +192,7 @@ def opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
   preimage_compl, compl_compl, of_injective.preimage_image _], exact h }⟩
 
 lemma infty_mem_opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
-  infty ∈ (opens_of_compl h : set (alexandroff X)) :=
+  ∞ ∈ (opens_of_compl h : set (alexandroff X)) :=
 by { simp only [opens_of_compl, topological_space.opens.coe_mk],
      exact mem_compl infty_not_mem_image_of }
 
@@ -210,7 +210,7 @@ instance : compact_space (alexandroff X) :=
   begin
     refine is_compact_of_finite_subcover (λ ι Z h H, _),
     simp only [univ_subset_iff] at H ⊢,
-    rcases Union_eq_univ_iff.mp H infty with ⟨K, hK⟩,
+    rcases Union_eq_univ_iff.mp H ∞ with ⟨K, hK⟩,
     have minor₁ : is_compact (of⁻¹' Z K)ᶜ,
     { specialize h K, rw is_open_iff_of_mem hK at h, exact h.1 },
     let p : ι → set X := λ i, of⁻¹' Z i,
@@ -224,7 +224,7 @@ instance : compact_space (alexandroff X) :=
     intros x,
     by_cases hx : x ∈ Z K,
     { exact ⟨K, mem_Union.mpr ⟨finset.mem_insert_self _ _, hx⟩⟩ },
-    { have triv₁ : x ≠ infty := (ne_of_mem_of_not_mem hK hx).symm,
+    { have triv₁ : x ≠ ∞ := (ne_of_mem_of_not_mem hK hx).symm,
       rcases ne_infty_iff_exists.mp triv₁ with ⟨y, hy⟩,
       have triv₂ : (y : alexandroff X) ∈ {x} := mem_singleton_of_eq hy.symm,
       rw [← mem_compl_iff, ← singleton_subset_iff] at hx,
@@ -238,9 +238,9 @@ instance : compact_space (alexandroff X) :=
 lemma dense_range_of (h : ¬ is_compact (univ : set X)) : dense (@range_of X _) :=
 begin
   refine dense_iff_inter_open.mpr (λ s hs Hs, _),
-  by_cases H : infty ∈ s,
+  by_cases H : ∞ ∈ s,
   { rw is_open_iff_of_mem H at hs,
-    have minor₁ : s ≠ {infty},
+    have minor₁ : s ≠ {∞},
     { by_contra w,
       rw [not_not.mp w, of_preimage_infty, compl_empty] at hs,
       exact h hs.1 },
@@ -248,7 +248,7 @@ begin
     { by_contra w,
       rw [not_not, eq_empty_iff_forall_not_mem] at w,
       simp only [mem_preimage] at w,
-      have : ∀ z ∈ s, z = infty := λ z hz,
+      have : ∀ z ∈ s, z = ∞ := λ z hz,
         by_contra (λ w', let ⟨x, hx⟩ := ne_infty_iff_exists.mp w' in
           by rw hx at hz; exact (w x) hz),
       exact minor₁ (eq_singleton_iff_unique_mem.mpr ⟨H, this⟩) },
@@ -268,20 +268,19 @@ lemma connected_space_alexandroff [preconnected_space X] (h : ¬ is_compact (uni
     exact is_preconnected.closure
       (is_preconnected_univ.image of continuous_of.continuous_on)
   end,
-  to_nonempty := ⟨infty⟩ }
+  to_nonempty := ⟨∞⟩ }
 
 instance [t1_space X] : t1_space (alexandroff X) :=
 { t1 :=
   λ z, begin
-    by_cases z = infty,
-    { rw [h, ← is_open_compl_iff, compl_eq_univ_diff, ← union_infty_eq_univ,
+    induction z using alexandroff.rec_infty_of,
+    { rw [← is_open_compl_iff, compl_eq_univ_diff, ← union_infty_eq_univ,
           union_diff_cancel_right (subset.antisymm_iff.mp inter_infty_eq_empty).1],
       exact is_open_range_of },
-    { rcases ne_infty_iff_exists.mp h with ⟨x, hx⟩,
-      have minor₂ : (infty : alexandroff X) ∈ {z}ᶜ :=
-        mem_compl (λ w, (ne.symm h) (mem_singleton_iff.mp w)),
+    { have minor₂ : ∞ ∈ ({z}ᶜ : set (alexandroff X)) :=
+        mem_compl (λ w, (infty_ne_coe z) (mem_singleton_iff.mp w)),
       rw [← is_open_compl_iff, is_open_iff_of_mem minor₂],
-      rw [preimage_compl, compl_compl, hx, ← of_eq_coe, 
+      rw [preimage_compl, compl_compl, ← of_eq_coe, 
           ← image_singleton, of_injective.preimage_image _],
       exact ⟨is_compact_singleton, is_closed_singleton⟩ }
   end }
@@ -289,8 +288,8 @@ instance [t1_space X] : t1_space (alexandroff X) :=
 instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
 { t2 :=
   λ x y hxy, begin
-    have key : ∀ (z : alexandroff X), z ≠ infty →
-      ∃ (u v : set (alexandroff X)), is_open u ∧ is_open v ∧ infty ∈ u ∧ z ∈ v ∧ u ∩ v = ∅ :=
+    have key : ∀ (z : alexandroff X), z ≠ ∞ →
+      ∃ (u v : set (alexandroff X)), is_open u ∧ is_open v ∧ ∞ ∈ u ∧ z ∈ v ∧ u ∩ v = ∅ :=
     λ z h, begin
       rcases ne_infty_iff_exists.mp h with ⟨y', hy'⟩,
       rcases exists_open_with_compact_closure y' with ⟨u, hu, huy', Hu⟩,
