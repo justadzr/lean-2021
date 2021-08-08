@@ -226,7 +226,7 @@ instance : compact_space (alexandroff X) :=
       simpa [hy] using hyi }
   end }
 
-lemma dense_set_self (h : ¬ is_compact (univ : set X)) : dense (@range_of X _) :=
+lemma dense_range_of (h : ¬ is_compact (univ : set X)) : dense (@range_of X _) :=
 begin
   refine dense_iff_inter_open.mpr (λ s hs Hs, _),
   by_cases H : infty ∈ s,
@@ -255,7 +255,7 @@ instance [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
   connected_space (alexandroff X) :=
 { is_preconnected_univ :=
   begin
-    rw ← dense_iff_closure_eq.mp (dense_set_self h),
+    rw ← dense_iff_closure_eq.mp (dense_range_of h),
     exact is_preconnected.closure
       (is_preconnected_univ.image of continuous_of.continuous_on)
   end,
