@@ -19,19 +19,59 @@ some properties inherited from `X`.
 
 ## Main results
 * The topological structure of `alexandroff X`
-* The connectedness of `alexandroff X` for a noncompact, preconnected `X`
+* The connectedness of `alexandroff X` for noncompact, preconnected `X`
 * `alexandroff X` is `T₁` for a T₁ space `X`
 * `alexandroff X` is Hausdorff if `X` is locally compact and Hausdorff
 -/
 
 noncomputable theory
-open filter set
+open set
 open_locale classical topological_space filter
+
+section option_topology
+
+@[reducible]
+def one_point_extension (X : Type*) [topological_space X] :
+  topological_space (option X) :=
+{ is_open := λ s, if none ∈ s then is_compact (some⁻¹' s)ᶜ ∧ is_open (some⁻¹' s)
+    else is_open (some⁻¹' s),
+  is_open_univ := by simp,
+  is_open_inter :=
+  λ s t hs ht, begin
+    split_ifs at hs ht with h h' h' h' h,
+    { simpa [h, h', compl_inter] using and.intro (hs.1.union ht.1) (hs.2.inter ht.2) },
+    { simpa [h, h'] using hs.inter ht.2 },
+    { simpa [h, h'] using hs.2.inter ht },
+    { simpa [h, h'] using hs.inter ht }
+  end,
+  is_open_sUnion :=
+  λ S ht, begin
+    suffices : is_open (some⁻¹' ⋃₀S),
+    { split_ifs with h,
+      { obtain ⟨(a : set (option X)), ha, ha'⟩ := mem_sUnion.mp h,
+        specialize ht a ha,
+        rw if_pos ha' at ht,
+        refine ⟨compact_of_is_closed_subset ht.left this.is_closed_compl _, this⟩,
+        rw [compl_subset_compl, preimage_subset_iff],
+        intros y hy,
+        refine ⟨a, ha, hy⟩ },
+      { exact this } },
+    rw is_open_iff_forall_mem_open,
+    simp only [and_imp, exists_prop, mem_Union, preimage_sUnion, mem_preimage, exists_imp_distrib],
+    intros y s hs hy,
+    refine ⟨some⁻¹' s, subset_subset_Union _ (subset_subset_Union hs (subset.refl _)), _,
+      mem_preimage.mpr hy⟩,
+    specialize ht s hs,
+    split_ifs at ht,
+    { exact ht.right },
+    { exact ht }
+  end }
+
+end option_topology
 
 section basic
 
 /-- The Alexandroff extension of an arbitrary topological space `X` -/
-@[nolint unused_arguments]
 def alexandroff (X : Type*) [topological_space X] := option X
 
 variables {X : Type*} [topological_space X]
@@ -47,14 +87,13 @@ lemma of_apply {x : X} : of x = some x := rfl
 lemma of_injective : function.injective (@of X _) :=
 option.some_injective X
 
-/-- The point at infinity -/
 def infty : alexandroff X := none
 
 local notation `∞` := infty
 
 namespace alexandroff
 
-instance : has_coe_t X (alexandroff X) := ⟨of⟩
+instance : has_coe X (alexandroff X) := ⟨of⟩
 
 instance : inhabited(alexandroff X) := ⟨∞⟩
 
@@ -66,13 +105,12 @@ of_injective.eq_iff
 @[simp] lemma infity_ne_coe (x : X) : ∞ ≠ (x : alexandroff X) .
 @[simp] lemma of_eq_coe {x : X} : (of x : alexandroff X) = x := rfl
 
-/-- Recursor for `alexandroff` using the preferred forms `∞` and `↑x`. -/
 @[elab_as_eliminator]
 def rec_infty_of (C : alexandroff X → Sort*) (h₁ : C infty) (h₂ : Π (x : X), C x) :
   Π (z : alexandroff X), C z :=
 option.rec h₁ h₂
 
-lemma ne_infty_iff_exists {x : alexandroff X} : 
+@[simp] lemma ne_infty_iff_exists {x : alexandroff X} : 
   x ≠ infty ↔ ∃ (y : X), x = y :=
 by { induction x using alexandroff.rec_infty_of; simp }
 
@@ -90,11 +128,9 @@ by simp [range_of]
 
 @[simp] lemma not_mem_range_of_iff (x : alexandroff X) :
   x ∉ range_of X ↔ x = ∞ :=
-by { induction x using alexandroff.rec_infty_of; simp [infty_not_mem_range_of] }
+by { induction x using alexandroff.rec_infty_of; simp }
 
-attribute [nolint simp_nf] not_mem_range_of_iff
-
-lemma infty_not_mem_image_of {s : set X} : ∞ ∉ of '' s :=
+@[simp] lemma infty_not_mem_image_of {s : set X} : ∞ ∉ of '' s :=
 not_mem_subset (image_subset _ $ subset_univ _) infty_not_mem_range_of
 
 lemma inter_infty_eq_empty : (range_of X) ∩ {∞} = ∅ :=
@@ -150,22 +186,22 @@ instance : topological_space (alexandroff X)  :=
 
 variables {s : set (alexandroff X)} {s' : set X}
 
-lemma is_open_alexandroff_iff_aux :
+@[simp] lemma is_open_alexandroff_iff_aux :
   is_open s ↔ if infty ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
   else is_open (of⁻¹' s) :=
 iff.rfl
 
-lemma is_open_iff_of_mem' (h : infty ∈ s) :
+@[simp] lemma is_open_iff_of_mem' (h : infty ∈ s) :
   is_open s ↔ is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s) :=
-by simp [is_open_alexandroff_iff_aux, h]
+by simp [h]
 
 lemma is_open_iff_of_mem (h : infty ∈ s) :
   is_open s ↔ is_compact (of⁻¹' s)ᶜ ∧ is_closed (of⁻¹' s)ᶜ :=
-by simp [is_open_alexandroff_iff_aux, h, is_closed_compl_iff]
+by simp [h, is_closed_compl_iff]
 
-lemma is_open_iff_of_not_mem (h : infty ∉ s) :
+@[simp] lemma is_open_iff_of_not_mem (h : infty ∉ s) :
   is_open s ↔ is_open (of⁻¹' s) :=
-by simp [is_open_alexandroff_iff_aux, h]
+by simp [h]
 
 lemma is_open_of_is_open (h : is_open s) :
   is_open (of⁻¹' s) :=
@@ -177,7 +213,7 @@ end
 
 end topology
 
-section topological_prop
+section topological
 open alexandroff
 
 variables {X : Type*} [topological_space X]
@@ -185,7 +221,6 @@ variables {X : Type*} [topological_space X]
 @[continuity] lemma continuous_of : continuous (@of X _) :=
 continuous_def.mpr (λ s hs, is_open_of_is_open hs)
 
-/-- An open set in `alexandroff X` constructed from a closed compact set in `X` -/
 def opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
   topological_space.opens (alexandroff X) :=
 ⟨(of '' s)ᶜ, by { rw [is_open_iff_of_mem ((mem_compl_iff _ _).mpr infty_not_mem_image_of),
@@ -260,7 +295,7 @@ begin
     exact ⟨of x, hz, x, mem_univ _, rfl⟩ }
 end
 
-lemma connected_space_alexandroff [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
+instance [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
   connected_space (alexandroff X) :=
 { is_preconnected_univ :=
   begin
@@ -317,4 +352,6 @@ instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
       simp only [image_inter of_injective, huv, image_empty], }
   end }
 
-end topological_prop
+end topological
+
+#lint
