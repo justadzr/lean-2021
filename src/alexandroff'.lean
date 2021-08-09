@@ -68,11 +68,202 @@ def one_point_extension (X : Type*) [topological_space X] :
     { exact ht }
   end }
 
+local attribute [instance] one_point_extension
+
+namespace one_point_extension
+
+variables {X : Type*} {s : set (option X)}
+
+lemma some_preimage_none : (some⁻¹' {none} : set X) = ∅ :=
+by { ext, simp }
+
+lemma some_mem_range_some (x : X) : some x ∈ (some '' (univ : set X)) :=
+by simp
+
+lemma none_not_mem_range_some : none ∉ some '' (univ : set X) .
+
+@[simp] lemma none_not_mem_image_some {s : set X} : none ∉ some '' s :=
+not_mem_subset (image_subset _ $ subset_univ _) none_not_mem_range_some
+
+lemma union_none_eq_univ : (some '' univ ∪ {none}) = (univ : set (option X)) :=
+begin
+  refine le_antisymm (subset_univ _) _,
+  rintros ⟨_|x⟩;
+  simp
+end
+
+lemma inter_none_eq_empty : (some '' univ) ∩ {none} = (∅ : set (option X)) :=
+by { ext ⟨_|x⟩; simp }
+
+variables [topological_space X]
+
+lemma is_open_alexandroff_iff_aux :
+  is_open s ↔ if none ∈ s then is_compact (some⁻¹' s)ᶜ ∧ is_open (some⁻¹' s)
+  else is_open (some⁻¹' s) :=
+iff.rfl
+
+lemma is_open_iff_of_mem (h : none ∈ s) :
+  is_open s ↔ is_compact (some⁻¹' s)ᶜ ∧ is_closed (some⁻¹' s)ᶜ :=
+by simp [is_open_alexandroff_iff_aux, h, is_closed_compl_iff]
+
+lemma is_open_iff_of_not_mem (h : none ∉ s) :
+  is_open s ↔ is_open (some⁻¹' s) :=
+by simp [is_open_alexandroff_iff_aux, h]
+
+lemma is_open_of_is_open (h : is_open s) :
+  is_open (some⁻¹' s) :=
+begin
+  by_cases H : none ∈ s,
+  { simpa using ((is_open_iff_of_mem H).mp h).2 },
+  { exact (is_open_iff_of_not_mem H).mp h }
+end
+
+lemma is_open_map_some : is_open_map (@some X) :=
+λ s hs, begin
+  rw [← preimage_image_eq s (option.some_injective X)] at hs,
+  rwa is_open_iff_of_not_mem none_not_mem_image_some
+end
+
+lemma continuous_some : continuous (@some X) :=
+continuous_def.mpr (λ s hs, is_open_of_is_open hs)
+
+/-- An open set of the extension constructed from a closed compact set in `X`-/
+def opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
+  topological_space.opens (option X) :=
+⟨(some '' s)ᶜ, by { rw [is_open_iff_of_mem ((mem_compl_iff _ _).mpr none_not_mem_image_some),
+  preimage_compl, compl_compl, (option.some_injective X).preimage_image _], assumption' }⟩
+
+lemma none_mem_opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
+  none ∈ (opens_of_compl h) :=
+by { simp only [opens_of_compl, topological_space.opens.coe_mk],
+     exact mem_compl none_not_mem_image_some }
+
+/-- The one-point extension is compact -/
+@[reducible, nolint def_lemma]
+def compact_space (X : Type*) [topological_space X] : 
+  compact_space (option X) :=
+{ compact_univ :=
+  begin
+    refine is_compact_of_finite_subcover (λ ι Z h H, _),
+    simp only [univ_subset_iff] at H ⊢,
+    rcases Union_eq_univ_iff.mp H none with ⟨K, hK⟩,
+    have minor₁ : is_compact (some⁻¹' Z K)ᶜ,
+    { specialize h K, rw is_open_iff_of_mem hK at h, exact h.1 },
+    let p : ι → set X := λ i, some⁻¹' Z i,
+    have minor₂ : ∀ i, is_open (p i) := λ i, is_open_of_is_open (h i),
+    have minor₃ : (some⁻¹' Z K)ᶜ ⊆ ⋃ i, p i :=
+      by simp only [p, ← preimage_Union, H, preimage_univ, subset_univ],
+    rcases is_compact_iff_finite_subcover.mp minor₁ p minor₂ minor₃ with ⟨ι', H'⟩,
+    refine ⟨insert K ι', _⟩,
+    rw ← preimage_compl at H',
+    simp only [Union_eq_univ_iff],
+    intros x,
+    by_cases hx : x ∈ Z K,
+    { exact ⟨K, mem_Union.mpr ⟨finset.mem_insert_self _ _, hx⟩⟩ },
+    { have triv₁ : x ≠ none := (ne_of_mem_of_not_mem hK hx).symm,
+      rcases option.ne_none_iff_exists.mp triv₁ with ⟨y, hy⟩,
+      have triv₂ : some y ∈ {x} := mem_singleton_of_eq hy,
+      rw [← mem_compl_iff, ← singleton_subset_iff] at hx,
+      have : some⁻¹' {x} ⊆ some⁻¹' (Z K)ᶜ := λ y hy, hx hy,
+      have key : y ∈ ⋃ (i : ι) (H : i ∈ ι'), p i := this.trans H' (mem_preimage.mpr triv₂),
+      rcases mem_bUnion_iff'.mp key with ⟨i, hi, hyi⟩,
+      refine ⟨i, mem_Union.mpr ⟨finset.subset_insert _ ι' hi, _⟩⟩,
+      simpa [hy] using hyi }
+  end }
+
+/-- The one-point extension of a T₁ space `X` is T₁-/
+@[reducible, nolint def_lemma]
+def t1_space [t1_space X] : t1_space (option X) :=
+{ t1 :=
+  λ z, begin
+    cases z,
+    { rw [← is_open_compl_iff, compl_eq_univ_diff, ← union_none_eq_univ,
+          union_diff_cancel_right (subset.antisymm_iff.mp inter_none_eq_empty).1],
+      exact is_open_map_some _ is_open_univ },
+    { have : none ∈ ({some z}ᶜ : set (option X)) :=
+        mem_compl (λ w, (option.some_ne_none z).symm (mem_singleton_iff.mp w)),
+      rw [← is_open_compl_iff, is_open_iff_of_mem this],
+      rw [preimage_compl, compl_compl, ← image_singleton, 
+          (option.some_injective X).preimage_image _],
+      exact ⟨is_compact_singleton, is_closed_singleton⟩ }
+  end }
+
+/-- The one-point extension of a Hausdorff `X` is Hausdorff -/
+@[reducible, nolint def_lemma]
+def t2_space [locally_compact_space X] [t2_space X] : t2_space (option X) :=
+{ t2 :=
+  λ x y hxy, begin
+    have key : ∀ (z : option X), z ≠ none →
+      ∃ (u v : set (option X)), is_open u ∧ is_open v ∧ none ∈ u ∧ z ∈ v ∧ u ∩ v = ∅ :=
+    λ z h, begin
+      rcases option.ne_none_iff_exists.mp h with ⟨y', hy'⟩,
+      rcases exists_open_with_compact_closure y' with ⟨u, hu, huy', Hu⟩,
+      have minor₁ : _ ∧ is_closed (closure u) := ⟨Hu, is_closed_closure⟩,
+      refine ⟨opens_of_compl minor₁, some '' u, _⟩,
+      refine ⟨(opens_of_compl minor₁).2, is_open_map_some _ hu,
+        none_mem_opens_of_compl minor₁, ⟨y', huy', hy'⟩, _⟩,
+      simp only [opens_of_compl, topological_space.opens.coe_mk],
+      have minor₂ : (some '' closure u)ᶜ ∩ some '' u ⊆ (some '' u)ᶜ ∩ some '' u,
+      { apply inter_subset_inter_left,
+        simp only [compl_subset_compl, image_subset _ (subset_closure)] },
+      rw compl_inter_self at minor₂,
+      exact eq_empty_of_subset_empty minor₂
+    end,
+    cases x; cases y,
+    { simpa using hxy },
+    { simpa using key y hxy.symm },
+    { rcases key x hxy with ⟨u, v, hu, hv, hxu, hyv, huv⟩,
+      exact ⟨v, u, hv, hu, hyv, hxu, (inter_comm u v) ▸ huv⟩ },
+    { have hxy' : x ≠ y := λ w, hxy ((option.some.inj_eq _ _).mpr w),
+      rcases t2_separation hxy' with ⟨u, v, hu, hv, hxu, hyv, huv⟩,
+      refine ⟨some '' u, some '' v, is_open_map_some _ hu, is_open_map_some _ hv,
+        ⟨x, hxu, rfl⟩, ⟨y, hyv, rfl⟩, _⟩,
+      simp only [image_inter (option.some_injective X), huv, image_empty] }
+  end }
+
+lemma dense_range_some (h : ¬ is_compact (univ : set X)) : dense (some '' (univ : set X)) :=
+begin
+  refine dense_iff_inter_open.mpr (λ s hs Hs, _),
+  by_cases H : none ∈ s,
+  { rw is_open_iff_of_mem H at hs,
+    have minor₁ : s ≠ {none},
+    { by_contra w,
+      rw [not_not.mp w, some_preimage_none, compl_empty] at hs,
+      exact h hs.1 },
+    have minor₂ : some⁻¹' s ≠ ∅,
+    { by_contra w,
+      rw [not_not, eq_empty_iff_forall_not_mem] at w,
+      simp only [mem_preimage] at w,
+      have : ∀ z ∈ s, z = none := λ z hz,
+        by_contra (λ w', let ⟨x, hx⟩ := option.ne_none_iff_exists'.mp w' in
+          by rw hx at hz; exact (w x) hz),
+      exact minor₁ (eq_singleton_iff_unique_mem.mpr ⟨H, this⟩) },
+    rcases ne_empty_iff_nonempty.mp minor₂ with ⟨x, hx⟩,
+    exact ⟨some x, hx, x, mem_univ _, rfl⟩ },
+  { rcases Hs with ⟨z, hz⟩,
+    rcases option.ne_none_iff_exists'.mp (ne_of_mem_of_not_mem hz H) with ⟨x, hx⟩,
+    rw hx at hz,
+    exact ⟨some x, hz, x, mem_univ _, rfl⟩ }
+end
+
+lemma connected_space [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
+  connected_space (option X) :=
+{ is_preconnected_univ :=
+  begin
+    rw ← dense_iff_closure_eq.mp (dense_range_some h),
+    exact is_preconnected.closure
+      (is_preconnected_univ.image some continuous_some.continuous_on)
+  end,
+  to_nonempty := ⟨none⟩ }
+
+end one_point_extension
+
 end option_topology
 
 section basic
 
 /-- The Alexandroff extension of an arbitrary topological space `X` -/
+@[nolint unused_arguments]
 def alexandroff (X : Type*) [topological_space X] := option X
 
 variables {X : Type*} [topological_space X]
@@ -95,7 +286,7 @@ local notation `∞` := infty
 
 namespace alexandroff
 
-instance : has_coe X (alexandroff X) := ⟨of⟩
+instance : has_coe_t X (alexandroff X) := ⟨of⟩
 
 instance : inhabited(alexandroff X) := ⟨∞⟩
 
@@ -107,39 +298,40 @@ of_injective.eq_iff
 @[simp] lemma infity_ne_coe (x : X) : ∞ ≠ (x : alexandroff X) .
 @[simp] lemma of_eq_coe {x : X} : (of x : alexandroff X) = x := rfl
 
+protected lemma prop_infty_of_prop_none {p : option X → Prop} (h : p none) : p infty :=
+by simpa [infty] using h
+
+/-- Recursor for `alexandroff` using the preferred forms `∞` and `↑x`. -/
 @[elab_as_eliminator]
-def rec_infty_of (C : alexandroff X → Sort*) (h₁ : C infty) (h₂ : Π (x : X), C x) :
+def rec_infty_coe (C : alexandroff X → Sort*) (h₁ : C infty) (h₂ : Π (x : X), C x) :
   Π (z : alexandroff X), C z :=
 option.rec h₁ h₂
 
-@[simp] lemma ne_infty_iff_exists {x : alexandroff X} : 
+lemma ne_infty_iff_exists {x : alexandroff X} : 
   x ≠ infty ↔ ∃ (y : X), x = y :=
-by { induction x using alexandroff.rec_infty_of; simp }
+by { induction x using alexandroff.rec_infty_coe; simp }
 
 @[simp] lemma coe_mem_range_of (x : X) : (x : alexandroff X) ∈ (range_of X) :=
-by simp [range_of]
+one_point_extension.some_mem_range_some x
 
 lemma union_infty_eq_univ : (range_of X ∪ {∞}) = univ :=
-begin
-  refine le_antisymm (subset_univ _) (λ x hx, _),
-  induction x using alexandroff.rec_infty_of; simp
-end
+one_point_extension.union_none_eq_univ
 
 @[simp] lemma infty_not_mem_range_of : ∞ ∉ range_of X :=
-by simp [range_of]
+one_point_extension.none_not_mem_image_some
 
 @[simp] lemma not_mem_range_of_iff (x : alexandroff X) :
   x ∉ range_of X ↔ x = ∞ :=
-by { induction x using alexandroff.rec_infty_of; simp }
+by { induction x using alexandroff.rec_infty_coe; simp }
 
 @[simp] lemma infty_not_mem_image_of {s : set X} : ∞ ∉ of '' s :=
-not_mem_subset (image_subset _ $ subset_univ _) infty_not_mem_range_of
+one_point_extension.none_not_mem_image_some
 
 lemma inter_infty_eq_empty : (range_of X) ∩ {∞} = ∅ :=
-by { ext x, induction x using alexandroff.rec_infty_of; simp }
+one_point_extension.inter_none_eq_empty
 
 lemma of_preimage_infty : (of⁻¹' {∞} : set X) = ∅ :=
-by { ext, simp }
+one_point_extension.some_preimage_none
 
 end alexandroff
 
@@ -154,30 +346,26 @@ instance : topological_space (alexandroff X) := one_point_extension X
 
 variables {s : set (alexandroff X)} {s' : set X}
 
-@[simp] lemma is_open_alexandroff_iff_aux :
+lemma is_open_alexandroff_iff_aux :
   is_open s ↔ if infty ∈ s then is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s)
   else is_open (of⁻¹' s) :=
 iff.rfl
 
-@[simp] lemma is_open_iff_of_mem' (h : infty ∈ s) :
+lemma is_open_iff_of_mem' (h : infty ∈ s) :
   is_open s ↔ is_compact (of⁻¹' s)ᶜ ∧ is_open (of⁻¹' s) :=
-by simp [h]
+by simp [is_open_alexandroff_iff_aux, h]
 
 lemma is_open_iff_of_mem (h : infty ∈ s) :
   is_open s ↔ is_compact (of⁻¹' s)ᶜ ∧ is_closed (of⁻¹' s)ᶜ :=
-by simp [h, is_closed_compl_iff]
+by simp [is_open_alexandroff_iff_aux, h, is_closed_compl_iff]
 
-@[simp] lemma is_open_iff_of_not_mem (h : infty ∉ s) :
+lemma is_open_iff_of_not_mem (h : infty ∉ s) :
   is_open s ↔ is_open (of⁻¹' s) :=
-by simp [h]
+by simp [is_open_alexandroff_iff_aux, h]
 
 lemma is_open_of_is_open (h : is_open s) :
   is_open (of⁻¹' s) :=
-begin
-  by_cases H : infty ∈ s,
-  { simpa using ((is_open_iff_of_mem H).mp h).2 },
-  { exact (is_open_iff_of_not_mem H).mp h }
-end
+one_point_extension.is_open_of_is_open h
 
 end topology
 
@@ -187,137 +375,38 @@ open alexandroff
 variables {X : Type*} [topological_space X]
 
 @[continuity] lemma continuous_of : continuous (@of X _) :=
-continuous_def.mpr (λ s hs, is_open_of_is_open hs)
+one_point_extension.continuous_some
 
+/-- An open set in `alexandroff X` constructed from a closed compact set in `X` -/
 def opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
   topological_space.opens (alexandroff X) :=
-⟨(of '' s)ᶜ, by { rw [is_open_iff_of_mem ((mem_compl_iff _ _).mpr infty_not_mem_image_of),
-  preimage_compl, compl_compl, of_injective.preimage_image _], exact h }⟩
+⟨(of '' s)ᶜ, (one_point_extension.opens_of_compl h).2⟩
 
 lemma infty_mem_opens_of_compl {s : set X} (h : is_compact s ∧ is_closed s) :
   infty ∈ (opens_of_compl h : set (alexandroff X)) :=
-by { simp only [opens_of_compl, topological_space.opens.coe_mk],
-     exact mem_compl infty_not_mem_image_of }
+one_point_extension.none_mem_opens_of_compl h
 
 lemma is_open_map_of : is_open_map (@of X _) :=
-λ s hs, begin
-  rw [← preimage_image_eq s of_injective] at hs,
-  rwa is_open_iff_of_not_mem infty_not_mem_image_of
-end
+one_point_extension.is_open_map_some
 
 lemma is_open_range_of : is_open (@range_of X _) :=
-is_open_map_of _ is_open_univ
+one_point_extension.is_open_map_some _ is_open_univ
 
-instance : compact_space (alexandroff X) :=
-{ compact_univ :=
-  begin
-    refine is_compact_of_finite_subcover (λ ι Z h H, _),
-    simp only [univ_subset_iff] at H ⊢,
-    rcases Union_eq_univ_iff.mp H infty with ⟨K, hK⟩,
-    have minor₁ : is_compact (of⁻¹' Z K)ᶜ,
-    { specialize h K, rw is_open_iff_of_mem hK at h, exact h.1 },
-    let p : ι → set X := λ i, of⁻¹' Z i,
-    have minor₂ : ∀ i, is_open (p i) := λ i, is_open_of_is_open (h i),
-    have minor₃ : (of⁻¹' Z K)ᶜ ⊆ ⋃ i, p i :=
-      by simp only [p, ← preimage_Union, H, preimage_univ, subset_univ],
-    rcases is_compact_iff_finite_subcover.mp minor₁ p minor₂ minor₃ with ⟨ι', H'⟩,
-    refine ⟨insert K ι', _⟩,
-    rw ← preimage_compl at H',
-    simp only [Union_eq_univ_iff],
-    intros x,
-    by_cases hx : x ∈ Z K,
-    { exact ⟨K, mem_Union.mpr ⟨finset.mem_insert_self _ _, hx⟩⟩ },
-    { have triv₁ : x ≠ infty := (ne_of_mem_of_not_mem hK hx).symm,
-      rcases ne_infty_iff_exists.mp triv₁ with ⟨y, hy⟩,
-      have triv₂ : (y : alexandroff X) ∈ {x} := mem_singleton_of_eq hy.symm,
-      rw [← mem_compl_iff, ← singleton_subset_iff] at hx,
-      have : of⁻¹' {x} ⊆ of⁻¹' (Z K)ᶜ := λ y hy, hx hy,
-      have key : y ∈ ⋃ (i : ι) (H : i ∈ ι'), p i := this.trans H' (mem_preimage.mpr triv₂),
-      rcases mem_bUnion_iff'.mp key with ⟨i, hi, hyi⟩,
-      refine ⟨i, mem_Union.mpr ⟨finset.subset_insert _ ι' hi, _⟩⟩,
-      simpa [hy] using hyi }
-  end }
+instance : compact_space (alexandroff X) := one_point_extension.compact_space X
 
 lemma dense_range_of (h : ¬ is_compact (univ : set X)) : dense (@range_of X _) :=
-begin
-  refine dense_iff_inter_open.mpr (λ s hs Hs, _),
-  by_cases H : infty ∈ s,
-  { rw is_open_iff_of_mem H at hs,
-    have minor₁ : s ≠ {infty},
-    { by_contra w,
-      rw [not_not.mp w, of_preimage_infty, compl_empty] at hs,
-      exact h hs.1 },
-    have minor₂ : of⁻¹' s ≠ ∅,
-    { by_contra w,
-      rw [not_not, eq_empty_iff_forall_not_mem] at w,
-      simp only [mem_preimage] at w,
-      have : ∀ z ∈ s, z = infty := λ z hz,
-        by_contra (λ w', let ⟨x, hx⟩ := ne_infty_iff_exists.mp w' in
-          by rw hx at hz; exact (w x) hz),
-      exact minor₁ (eq_singleton_iff_unique_mem.mpr ⟨H, this⟩) },
-    rcases ne_empty_iff_nonempty.mp minor₂ with ⟨x, hx⟩,
-    exact ⟨of x, hx, x, mem_univ _, rfl⟩ },
-  { rcases Hs with ⟨z, hz⟩,
-    rcases ne_infty_iff_exists.mp (ne_of_mem_of_not_mem hz H) with ⟨x, hx⟩,
-    rw hx at hz,
-    exact ⟨of x, hz, x, mem_univ _, rfl⟩ }
-end
+one_point_extension.dense_range_some h
 
 lemma connected_space_alexandroff [preconnected_space X] (h : ¬ is_compact (univ : set X)) :
   connected_space (alexandroff X) :=
-{ is_preconnected_univ :=
-  begin
-    rw ← dense_iff_closure_eq.mp (dense_range_of h),
-    exact is_preconnected.closure
-      (is_preconnected_univ.image of continuous_of.continuous_on)
-  end,
-  to_nonempty := ⟨infty⟩ }
+one_point_extension.connected_space h
 
 instance [t1_space X] : t1_space (alexandroff X) :=
-{ t1 :=
-  λ z, begin
-    by_cases z = infty,
-    { rw [h, ← is_open_compl_iff, compl_eq_univ_diff, ← union_infty_eq_univ,
-          union_diff_cancel_right (subset.antisymm_iff.mp inter_infty_eq_empty).1],
-      exact is_open_range_of },
-    { rcases ne_infty_iff_exists.mp h with ⟨x, hx⟩,
-      have minor₂ : (infty : alexandroff X) ∈ {z}ᶜ :=
-        mem_compl (λ w, (ne.symm h) (mem_singleton_iff.mp w)),
-      rw [← is_open_compl_iff, is_open_iff_of_mem minor₂],
-      rw [preimage_compl, compl_compl, hx, ← of_eq_coe, 
-          ← image_singleton, of_injective.preimage_image _],
-      exact ⟨is_compact_singleton, is_closed_singleton⟩ }
-  end }
+one_point_extension.t1_space
 
 instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
-{ t2 :=
-  λ x y hxy, begin
-    have key : ∀ (z : alexandroff X), z ≠ infty →
-      ∃ (u v : set (alexandroff X)), is_open u ∧ is_open v ∧ infty ∈ u ∧ z ∈ v ∧ u ∩ v = ∅ :=
-    λ z h, begin
-      rcases ne_infty_iff_exists.mp h with ⟨y', hy'⟩,
-      rcases exists_open_with_compact_closure y' with ⟨u, hu, huy', Hu⟩,
-      have minor₁ : _ ∧ is_closed (closure u) := ⟨Hu, is_closed_closure⟩,
-      refine ⟨opens_of_compl minor₁, of '' u, _⟩,
-      refine ⟨(opens_of_compl minor₁).2, is_open_map_of _ hu,
-        infty_mem_opens_of_compl minor₁, ⟨y', huy', hy'.symm⟩, _⟩,
-      simp only [opens_of_compl, topological_space.opens.coe_mk],
-      have minor₂ : (of '' closure u)ᶜ ∩ of '' u ⊆ (of '' u)ᶜ ∩ of '' u,
-      { apply inter_subset_inter_left,
-        simp only [compl_subset_compl, image_subset _ (subset_closure)] },
-      rw compl_inter_self at minor₂,
-      exact eq_empty_of_subset_empty minor₂
-    end,
-    induction x using alexandroff.rec_infty_of; induction y using alexandroff.rec_infty_of,
-    { simpa using hxy },
-    { simpa using key y hxy.symm },
-    { rcases key x hxy with ⟨u, v, hu, hv, hxu, hyv, huv⟩,
-      exact ⟨v, u, hv, hu, hyv, hxu, (inter_comm u v) ▸ huv⟩ },
-    { have hxy' : x ≠ y := λ w, hxy (coe_eq_coe.mpr w),
-      rcases t2_separation hxy' with ⟨u, v, hu, hv, hxu, hyv, huv⟩,
-      refine ⟨of '' u, of '' v, is_open_map_of _ hu, is_open_map_of _ hv,
-        ⟨x, hxu, rfl⟩, ⟨y, hyv, rfl⟩, _⟩,
-      simp only [image_inter of_injective, huv, image_empty], }
-  end }
+one_point_extension.t2_space
 
 end topological
+
+#lint
