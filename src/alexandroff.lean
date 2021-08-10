@@ -25,8 +25,8 @@ some properties inherited from `X`.
 -/
 
 noncomputable theory
-open filter set
-open_locale classical topological_space filter
+open set
+open_locale classical topological_space
 
 section basic
 
@@ -175,7 +175,7 @@ begin
   { simpa using ((is_open_iff_of_mem H).mp h).2 },
   { exact (is_open_iff_of_not_mem H).mp h }
 end
-
+ 
 end topology
 
 section topological_prop
@@ -317,3 +317,27 @@ instance [locally_compact_space X] [t2_space X] : t2_space (alexandroff X) :=
   end }
 
 end topological_prop
+
+namespace alexandroff
+
+section arithmetic
+
+variables {X : Type*} [topological_space X]
+
+instance [has_zero X] : has_zero (alexandroff X) := with_top.has_zero
+
+instance [has_one X] : has_one (alexandroff X) := with_top.has_one
+
+instance [has_add X] : has_add (alexandroff X) := with_top.has_add
+
+@[simp] lemma coe_add [has_add X] {x y : X} : ((x + y : X) : alexandroff X) = x + y := rfl
+
+@[simp] lemma add_infty [has_add X] {x : (alexandroff X)} : x + ∞ = ∞ :=
+with_top.add_top
+
+@[simp] lemma infty_add [has_add X] {x : (alexandroff X)} : ∞ + x = ∞ :=
+with_top.top_add
+
+end arithmetic
+
+end alexandroff
