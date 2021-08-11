@@ -229,12 +229,39 @@ begin
   exact hp₁p₂.symm,
 end
 
-lemma G {x : E} (hf : conformal f) (hf' : times_cont_diff_at ℝ 2 f x) {u v : E} :
-  ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x v⟫ + ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x v u⟫ =
-  2 * similarity_factor_sqrt (conformal_at_iff'.mp $ hf.conformal_at x) * 
-  (fderiv ℝ (λ x, similarity_factor_sqrt $ conformal_at_iff'.mp $ hf.conformal_at x) u) :=
+#check similarity_factor_sqrt_eq
+
+lemma G {x' : E} (hf : conformal f) (hf' : times_cont_diff_at ℝ 2 f x') {u v : E} (hu : u ≠ 0) :
+  ⟪fderiv ℝ (fderiv ℝ f) x' u v, fderiv ℝ f x' u⟫ + 
+  ⟪fderiv ℝ f x' u, fderiv ℝ (fderiv ℝ f) x' u v⟫ =
+  2 * similarity_factor_sqrt (conformal_at_iff'.mp $ hf.conformal_at x') * (fderiv ℝ 
+  (λ y, similarity_factor_sqrt $ conformal_at_iff'.mp $ hf.conformal_at y) x' v) * ⟪u, u⟫:=
 begin
-  
+  rw ← D' u u v hf',
+  have : (λ (y : E), ⟪fderiv ℝ f y u, fderiv ℝ f y u⟫) = 
+    (λ y, ⟪u, u⟫ * id y) ∘ (λ y, similarity_factor $ conformal_at_iff'.mp $ hf.conformal_at y),
+  { ext1 y,
+    simp only [function.comp_app, congr_arg],
+    rw mul_comm,
+    exact (similarity_factor_prop $ conformal_at_iff'.mp $ hf.conformal_at y).2 u u },
+  have minor₁ := λ y, conformal_at_iff'.mp $ hf.conformal_at y,
+  have minor₂ := (similarity_factor_times_cont_diff_at hu x' minor₁ $ D22 hf').differentiable_at 
+    (le_of_eq rfl),
+  have minor₃ := (similarity_factor_sqrt_times_cont_diff_at hu x' minor₁ 
+    $ D22 hf').differentiable_at (le_of_eq rfl),
+  rw [this, fderiv.comp _ (differentiable_at_id.const_mul _) minor₂, 
+      fderiv_const_mul differentiable_at_id ⟪u, u⟫, fderiv_id],
+  rw ← similarity_factor_sqrt_eq minor₁,
+  simp only [pow_two], 
+  rw [fderiv_mul minor₃ minor₃, continuous_linear_map.coe_comp'],
+  simp only [function.comp_app, continuous_linear_map.coe_add', pi.add_apply, 
+             continuous_linear_map.smul_apply, smul_eq_mul, continuous_linear_map.coe_id'],
+  simp only [id],
+  ring
 end
 
 end tot_diff_eq
+
+-- h = u
+-- k = v
+-- l = w
