@@ -47,7 +47,7 @@ end continuous_linear_map_eval_at
 
 end eval
 
-section similarity
+section similarity1
 
 open conformal_at
 
@@ -106,4 +106,85 @@ begin
   exact filter.eventually_eq_of_mem hu this
 end
 
-end fderiv_eval
+end similarity1
+
+section similarity2
+
+open conformal_at
+
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f' : E → (E →L[ℝ] F)}
+
+def similarity_factor_sqrt {x : E} 
+  (h : ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) : ℝ :=
+real.sqrt (similarity_factor h)
+
+lemma similarity_factor_sqrt_prop {x : E} 
+  (h : ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) :
+  similarity_factor_sqrt h ≠ 0 ∧ 
+  ∀ u v, ⟪f' x u, f' x v⟫ = (similarity_factor_sqrt h) ^ 2 * ⟪u, v⟫ :=
+begin
+  refine ⟨real.sqrt_ne_zero'.mpr (similarity_factor_prop h).1, λ u v, _⟩,
+  simp only [(similarity_factor_prop h).2, similarity_factor_sqrt, 
+             real.sq_sqrt (le_of_lt (similarity_factor_prop h).1)]
+end
+
+lemma similarity_factor_sqrt_times_cont_diff_at {v : E} (hv : v ≠ 0) (x : E)
+  (h : ∀ x, ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) 
+  {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
+  times_cont_diff_at ℝ n (λ x, similarity_factor_sqrt $ h x) x :=
+begin
+  simp only [similarity_factor_sqrt],
+  refine times_cont_diff_at.sqrt _ (ne_of_gt (similarity_factor_prop $ h x).1),
+  exact similarity_factor_times_cont_diff_at hv x h H
+end
+
+lemma similarity_factor_sqrt_eq
+  (h : ∀ x, ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) :
+  (λ x, (similarity_factor_sqrt $ h x) ^ 2) = (λ x, similarity_factor $ h x) :=
+begin
+  ext1 y, 
+  simp only [similarity_factor_sqrt, real.sq_sqrt (le_of_lt (similarity_factor_prop $ h y).1)]
+end
+
+end similarity2
+
+section similarity3
+
+open conformal_at
+
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f' : E → (E →L[ℝ] F)}
+
+def similarity_factor_sqrt_inv {x : E} 
+  (h : ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) : ℝ :=
+(similarity_factor_sqrt h)⁻¹
+
+lemma similarity_factor_sqrt_inv_prop {x : E} 
+  (h : ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) :
+  similarity_factor_sqrt_inv h ≠ 0 ∧ 
+  ∀ u v, ⟪f' x u, f' x v⟫ = ((similarity_factor_sqrt_inv h)⁻¹) ^ 2 * ⟪u, v⟫ :=
+begin
+  refine ⟨inv_ne_zero (similarity_factor_sqrt_prop h).1, λ u v, _⟩,
+  simp only [(similarity_factor_sqrt_prop h).2, similarity_factor_sqrt_inv, inv_inv']
+end
+
+lemma similarity_factor_sqrt_inv_times_cont_diff_at {v : E} (hv : v ≠ 0) (x : E)
+  (h : ∀ x, ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) 
+  {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
+  times_cont_diff_at ℝ n (λ x, similarity_factor_sqrt_inv $ h x) x :=
+begin
+  simp only [similarity_factor_sqrt_inv],
+  refine times_cont_diff_at.inv _ (similarity_factor_sqrt_prop $ h x).1,
+  exact similarity_factor_sqrt_times_cont_diff_at hv x h H
+end
+
+lemma similarity_factor_sqrt_inv_eq
+  (h : ∀ x, ∃ (c : ℝ), 0 < c ∧ ∀ u v, ⟪f' x u, f' x v⟫ = c * ⟪u, v⟫) :
+  (λ x, (similarity_factor_sqrt_inv $ h x)⁻¹ ^ 2) = (λ x, similarity_factor $ h x) :=
+begin
+  ext1 y,
+  simp only [similarity_factor_sqrt_inv, inv_inv'],
+  have := congr_fun (similarity_factor_sqrt_eq h) y,
+  simpa [congr_arg] using this
+end
+
+end similarity3
