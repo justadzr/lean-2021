@@ -367,7 +367,7 @@ lemma GGG_eventually_eq {u v : E} {s : set E} (hxs : x ∈ s)
   (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • (fderiv ℝ (fderiv ℝ f) x' u v) +
   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v) • fderiv ℝ f x' u + 
   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' u) • fderiv ℝ f x' v) =ᶠ[𝓝 x] 
-  (λ x', 0) :=
+  λ x', (0 : F) :=
 begin
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
   rcases eventually_iff_exists_mem.mp hf with ⟨s₁, hs₁, hy₁⟩,
@@ -415,7 +415,7 @@ begin
   exact DD2 zero_lt_two hf'.self_of_nhds u
 end
 
-lemma J2 {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
+lemma J2 {u : E} (v w : E) (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 4 f x') :
   fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
   = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
   fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
@@ -423,23 +423,35 @@ lemma J2 {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont
 begin
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
   have := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
-    ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
+    ((D22 hf').congr_of_eventually_eq Heven.symm),
   rw fderiv_smul,
   simp only [add_apply, smul_apply, smul_right_apply, congr_arg],
-  rw [DD1' (D21 $ D22 hf'.self_of_nhds) (D23 zero_lt_two $ D22 hf'.self_of_nhds)],
+  rw [DD1' (D21 $ D22 hf') (D23 zero_lt_two $ D22 hf')],
   simp only [add_comm, congr_arg],
   rw similarity_factor_sqrt_inv_eq_of_eventually_eq _ Heven,
   exact this.differentiable_at (with_top.coe_le_coe.mpr $ nat.succ_le_succ zero_le_two),
   exact (apply ℝ F v).differentiable_at.comp _ 
-    ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
+    ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'),
 end
 
-lemma tot1 {u v : E} {s : set E} (hxs : x ∈ s) 
-  (hs : is_open s) (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
-  (hf' : ∀ y ∈ s, times_cont_diff_at ℝ 2 f y) (h : ∀ y ∈ s, function.surjective (fderiv ℝ f y)) :
+lemma tot1 {u v w : E} {s : set E} (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
+  (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
+  (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
   fderiv ℝ (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x) u v = 0 :=
 begin
-  have m₁ := (GGG_eventually_eq hf Hf Heven hxs hs hu hv huv hf' h).fderiv_eq,
+  have triv₁ : (2 : with_top ℕ) ≤ 4,
+  { apply with_top.coe_le_coe.mpr,
+    norm_num },
+  rcases eventually_iff_exists_mem.mp hf' with ⟨s₁, hs₁, hy₁⟩,
+  rcases eventually_iff_exists_mem.mp h with ⟨s₂, hs₂, hy₂⟩,
+  rcases mem_nhds_iff.mp (inter_mem hs₁ hs₂) with ⟨t, ht, Ht₁, Ht₂⟩,
+  have m₁ : fderiv ℝ _ _ w = (0 : F),
+  { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hv huv 
+    (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
+    simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
+  rw [fderiv_add, fderiv_add] at m₁,
+  simp only [add_apply] at m₁,
+  rw [J1, J1, J2] at m₁,
 end
 
 end tot_diff_eq
