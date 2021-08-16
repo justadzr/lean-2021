@@ -146,20 +146,16 @@ begin
   simp only [(apply ℝ F v).fderiv, apply_apply],
   have := hf'.has_fderiv_at,
   rw second_derivative_symmetric_of_eventually,
-  -- exact second_derivative_symmetric_of_eventually hf hf'.has_fderiv_at _ _
 end
 
 lemma DD2 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y) (u : E) :
   differentiable_at ℝ (λ x, fderiv ℝ f x u) y :=
 begin
-  have : (λ x, fderiv ℝ f x u) = λ x, ((continuous_linear_map_eval_at ℝ F u) ∘ fderiv ℝ f) x :=
-    by simp only [function.comp_app, continuous_linear_map_eval_at_apply],
-  rw [this],
+  have : (λ x, fderiv ℝ f x u) = λ x, ((apply ℝ _ _) ∘ fderiv ℝ f) x :=
+    by simp only [function.comp_app, apply_apply],
+  rw this,
   simp only [congr_arg],
-  apply differentiable_at.comp,
-  { refine (times_cont_diff.differentiable _ le_top).differentiable_at,
-    exact times_cont_diff_top _ _ _ },
-  { exact D23 hn hf }
+  exact differentiable_at.comp _ (apply ℝ F u).differentiable_at (D23 hn hf)
 end
 
 lemma D' (u v w : E) {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y)  :
