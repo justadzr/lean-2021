@@ -1,8 +1,8 @@
 [package]
 name = "Yourong_Zang_UROP"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.31.0"
+lean_version = "leanprover-community/lean:3.32.1"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "3b37614c6a7baf0dc82bba15216f101789774db5"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "253712e1dfcb1fe58dfb0a7ed1098039db372374"}
