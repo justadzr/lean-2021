@@ -360,14 +360,19 @@ end
 
 open_locale filter
 
--- lemma GGG_eventually_eq {u v x₀ : E} {s : set E} (hx₀s : x₀ ∈ s) 
---   (hs : is_open s) (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
---   (hf' : ∀ y ∈ s, times_cont_diff_at ℝ 2 f y) (h : ∀ y ∈ s, function.surjective (fderiv ℝ f y)) : 
---   (λ x, (similarity_factor_sqrt_inv $ psuedo_conf x) • (fderiv ℝ (fderiv ℝ f) x u v) +
---   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v) • fderiv ℝ f x u + 
---   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x u) • fderiv ℝ f x v) =ᶠ[𝓝 x₀] 
---   (λ x, 0) :=
--- filter.eventually_eq_of_mem (hs.mem_nhds hx₀s) (λ y hy, GGG hf Hf Heven hu hv huv)
+lemma GGG_eventually_eq {u v : E} {s : set E} (hxs : x ∈ s) 
+  (hs : is_open s) (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
+  (hf' : ∀ y ∈ s, times_cont_diff_at ℝ 2 f y) (h : ∀ y ∈ s, function.surjective (fderiv ℝ f y)) : 
+  (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • (fderiv ℝ (fderiv ℝ f) x' u v) +
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v) • fderiv ℝ f x' u + 
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' u) • fderiv ℝ f x' v) =ᶠ[𝓝 x] 
+  (λ x', 0) :=
+begin
+  rcases filter.eventually_iff_exists_mem.mp hf with ⟨s₁, hs₁, hy₁⟩,
+  rcases filter.eventually_eq_iff_exists_mem.mp Heven with ⟨s₂, hs₂, hy₂⟩,
+  refine filter.eventually_eq_of_mem (filter.inter_mem hs₁ hs₂) _,
+  -- simp only [congr_arg], 
+end
 
 lemma J1 {u : E} (v w : E) (hu : u ≠ 0)
   (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') (h : function.surjective (fderiv ℝ f x)) :
@@ -418,6 +423,8 @@ begin
   exact (apply ℝ F v).differentiable_at.comp _ 
     ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
 end
+
+lemma tot1 
 
 end tot_diff_eq
 
