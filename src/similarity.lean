@@ -2,49 +2,8 @@ import analysis.normed_space.conformal_linear_map
 import analysis.calculus.times_cont_diff
 
 noncomputable theory
-open filter
+open filter continuous_linear_map
 open_locale real_inner_product_space classical filter topological_space
-
-section eval
-
-/-- Evaluation map of a continuous linear map -/
-def continuous_linear_map_eval_at {E : Type*} (𝕜 F : Type*) [normed_group E] [normed_group F] 
-  [nondiscrete_normed_field 𝕜] [normed_space 𝕜 E] [normed_space 𝕜 F] (x : E) : 
-  (E →L[𝕜] F) →ₗ[𝕜] F :=
-{ to_fun := λ f, f x,
-  map_add' := by simp,
-  map_smul' := by simp }
-
-namespace continuous_linear_map_eval_at
-
-variables {E : Type*} (𝕜 F : Type*) [normed_group E] [normed_group F] 
-  [nondiscrete_normed_field 𝕜] [normed_space 𝕜 E] [normed_space 𝕜 F] (x : E)
-
-@[simp] lemma continuous_linear_map_eval_at_apply {f : E →L[𝕜] F} :
-  (continuous_linear_map_eval_at 𝕜 F x) f = f x :=
-rfl
-
-lemma is_bounded_linear_eval_at : is_bounded_linear_map 𝕜 (continuous_linear_map_eval_at 𝕜 F x) :=
-{ to_is_linear_map := (continuous_linear_map_eval_at 𝕜 F x).is_linear,
-  bound := begin
-    by_cases x = 0,
-    { refine ⟨1, zero_lt_one, λ f, _⟩,
-      simp only [h, one_mul, continuous_linear_map_eval_at_apply, 
-                 f.map_zero, norm_zero, norm_nonneg] },
-    { refine ⟨∥x∥, norm_pos_iff.mpr h, λ f, _⟩,
-      simpa [continuous_linear_map_eval_at_apply, mul_comm] using f.le_op_norm x }
-  end }
-
-lemma coe_eval_at : ((is_bounded_linear_eval_at 𝕜 F x).to_continuous_linear_map : 
-  (E →L[𝕜] F) →ₗ[𝕜] F) =  continuous_linear_map_eval_at 𝕜 F x :=
-rfl
-
-lemma times_cont_diff_top : times_cont_diff 𝕜 ⊤ (continuous_linear_map_eval_at 𝕜 F x) :=
-(is_bounded_linear_eval_at 𝕜 F x).times_cont_diff
-
-end continuous_linear_map_eval_at
-
-end eval
 
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f' : E → (E →L[ℝ] F)}
 
@@ -80,7 +39,6 @@ begin
   exact mul_right_cancel' minor₃ key.symm
 end
 
-/-- TODO: Change hypo `h` into a `∀` statement. -/
 lemma similarity_factor_times_cont_diff_at [nontrivial E] (x : E)
   (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map (f' y)) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) : 
   times_cont_diff_at ℝ n (λ y, similarity_factor $ h y) x :=
@@ -92,18 +50,14 @@ begin
               ← real_inner_self_eq_norm_sq, ← (similarity_factor_prop $ h y).2, 
               real_inner_self_eq_norm_sq, ← pow_two],
   have minor₃ : (λ x, similarity_factor $ h x) =
-    λ x, ∥(λ y, ((continuous_linear_map_eval_at ℝ F v) ∘ f') y) x∥ ^ 2 / ∥v∥ ^ 2,
+    λ x, ∥(λ y, ((apply ℝ F v) ∘ f') y) x∥ ^ 2 / ∥v∥ ^ 2,
   { ext1 x,
-    simp only [minor₂ x, continuous_linear_map_eval_at.continuous_linear_map_eval_at_apply,
-               function.comp_app], },
+    simp only [minor₂ x, apply_apply, function.comp_app] },
   rw [minor₃],
   apply times_cont_diff_at.div_const,
   apply times_cont_diff_at.norm_sq,
   simp only [congr_arg],
-  apply times_cont_diff_at.comp,
-  { exact 
-    ((continuous_linear_map_eval_at.times_cont_diff_top ℝ F v).of_le le_top).times_cont_diff_at },
-  { exact H }
+  exact times_cont_diff_at.comp _ (apply ℝ F v).times_cont_diff.times_cont_diff_at H
 end
 
 end similarity1
