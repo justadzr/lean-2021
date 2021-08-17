@@ -490,6 +490,7 @@ begin
   have diff_mk₃ := (minor₀.differentiable_at triv₃).smul diff₃,
   simp only [congr_arg, function.comp_app, apply_apply] at diff_mk₁ diff_mk₂ diff_mk₃,
   rw [fderiv_add (diff_mk₃.add diff_mk₂) diff_mk₁, fderiv_add diff_mk₃ diff_mk₂] at m₁,
+  simp only [add_apply] at m₁,
   rw [J1, J1, J2] at m₁,
 end
 
