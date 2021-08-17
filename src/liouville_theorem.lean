@@ -446,76 +446,108 @@ begin
     ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'),
 end
 
-lemma tot1 {u v w : E} {s : set E} 
-  (hu : u ≠ 0) (hv : v ≠ 0) (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0)
-  (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
-  (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
-  fderiv ℝ (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x) u v = 0 :=
+lemma J2' {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
+  fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
+  = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
+  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
+  fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
 begin
-  have triv₁ : (2 : with_top ℕ) ≤ 4,
-  { apply with_top.coe_le_coe.mpr,
-    norm_num },
-  have triv₂ : (3 : with_top ℕ) ≤ 4,
-  { apply with_top.coe_le_coe.mpr,
-    norm_num },
-  have triv₃ : (1 : with_top ℕ) ≤ 3,
-  { apply with_top.coe_le_coe.mpr,
-    norm_num },
-  have triv₄ : (1 : with_top ℕ) ≤ 4,
-  { apply with_top.coe_le_coe.mpr,
-    norm_num },  
-  haveI : nontrivial E := nontrivial_of_ne u 0 hu,
-  have minor₀ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
-    ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
-  have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
-    hf'.mono (λ a ha, D22 $ ha.of_le triv₂),
-  have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
-    (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
-    D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
-    minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
-  rcases eventually_iff_exists_mem.mp hf' with ⟨s₁, hs₁, hy₁⟩,
-  rcases eventually_iff_exists_mem.mp h with ⟨s₂, hs₂, hy₂⟩,
-  rcases mem_nhds_iff.mp (inter_mem hs₁ hs₂) with ⟨t, ht, Ht₁, Ht₂⟩,
-  have m₁ : fderiv ℝ _ _ w = (0 : F),
-  { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hv huv 
-    (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
-    simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
-  have m₂ : fderiv ℝ _ _ v = (0 : F),
-  { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hw huw
-    (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
-    simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
-  rw ← m₂ at m₁,
-  have diff₁ := (apply ℝ ℝ u).differentiable_at.comp _ (D23 zero_lt_two minor₀),
-  have diff₁' := (apply ℝ ℝ v).differentiable_at.comp _ (D23 zero_lt_two minor₀),
-  have diff₁'' := (apply ℝ ℝ w).differentiable_at.comp _ (D23 zero_lt_two minor₀),
-  have diff₂ := (apply ℝ F v).differentiable_at.comp _ 
-    ((D22 hf'.self_of_nhds).differentiable_at triv₃),
-  have diff₂' := (apply ℝ F u).differentiable_at.comp _ 
-    ((D22 hf'.self_of_nhds).differentiable_at triv₃),
-  have diff₂'' := (apply ℝ F w).differentiable_at.comp _ 
-    ((D22 hf'.self_of_nhds).differentiable_at triv₃),
-  have diff₃ := (apply ℝ F v).differentiable_at.comp _ 
-    ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
-  have diff₃' := (apply ℝ F w).differentiable_at.comp _ 
-    ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
-  have diff_mk₁ := diff₁.smul diff₂,
-  have diff_mk₁' := diff₁.smul diff₂'',
-  have diff_mk₂ := diff₁'.smul diff₂',
-  have diff_mk₂' := diff₁''.smul diff₂',
-  have diff_mk₃ := (minor₀.differentiable_at triv₃).smul diff₃,
-  have diff_mk₃' := (minor₀.differentiable_at triv₃).smul diff₃',
-  simp only [congr_arg, function.comp_app, apply_apply] at 
-    diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃',
-  have times₁ := hf'.mono (λ a ha, ha.of_le triv₂), 
-  rw [fderiv_add (diff_mk₃.add diff_mk₂) diff_mk₁, fderiv_add diff_mk₃ diff_mk₂,
-      fderiv_add (diff_mk₃'.add diff_mk₂') diff_mk₁', fderiv_add diff_mk₃' diff_mk₂'] at m₁,
-  simp only [add_apply] at m₁,
-  rw [J1 hf Hf Heven v w hu times₁, J1 hf Hf Heven u w hv times₁,
-      J1 hf Hf Heven w v hu times₁, J1 hf Hf Heven u v hw times₁] at m₁,
-  rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, J2 hf Hf Heven w v hu hf'.self_of_nhds] at m₁,
-  -- rw second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
-  --   (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w u at m₁,
+  rw J2 hf Hf Heven v w hu hf'.self_of_nhds,
+  have := (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at,
+  have minor₁ : ∀ᶠ x' in 𝓝 x, has_fderiv_at ((apply ℝ _ v) ∘ (fderiv ℝ f)) 
+    ((apply ℝ _ v).comp $ fderiv ℝ (fderiv ℝ f) x') x' :=
+    hf'.mono (λ y hy, (apply ℝ F v).has_fderiv_at.comp _ (D23 zero_lt_three hy).has_fderiv_at),
+  have minor₂ : (λ x', (apply ℝ _ v).comp $ fderiv ℝ (fderiv ℝ f) x') =ᶠ[𝓝 x] λ x',
+    (((apply ℝ (E →L[ℝ] F)) v) ∘ fderiv ℝ (fderiv ℝ f)) x' :=
+  hf'.mono (λ y hy, begin
+    ext1,
+    simp only [coe_comp', function.comp_app, apply_apply],
+    rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_three hy).has_fderiv_at
+  end),
+  have minor₃ : has_fderiv_at ((apply ℝ _ v) ∘ fderiv ℝ (fderiv ℝ f))
+    ((apply ℝ _ v).comp (fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x)) x :=
+  begin
+    refine (apply ℝ (E →L[ℝ] F) v).has_fderiv_at.comp _ _,
+    exact (D23 zero_lt_two $ D22 hf'.self_of_nhds).has_fderiv_at,
+  end,
 end
+
+-- lemma tot1 {u v w : E} {s : set E} 
+--   (hu : u ≠ 0) (hv : v ≠ 0) (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0)
+--   (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
+--   (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
+--   fderiv ℝ (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x) u v = 0 :=
+-- begin
+--   have triv₁ : (2 : with_top ℕ) ≤ 4,
+--   { apply with_top.coe_le_coe.mpr,
+--     norm_num },
+--   have triv₂ : (3 : with_top ℕ) ≤ 4,
+--   { apply with_top.coe_le_coe.mpr,
+--     norm_num },
+--   have triv₃ : (1 : with_top ℕ) ≤ 3,
+--   { apply with_top.coe_le_coe.mpr,
+--     norm_num },
+--   have triv₄ : (1 : with_top ℕ) ≤ 4,
+--   { apply with_top.coe_le_coe.mpr,
+--     norm_num },  
+--   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
+--   have minor₀ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+--     ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
+--   have minor₂ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
+--   have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
+--     hf'.mono (λ a ha, D22 $ ha.of_le triv₂),
+--   have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
+--     (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
+--     D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+--     minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
+--   rcases eventually_iff_exists_mem.mp hf' with ⟨s₁, hs₁, hy₁⟩,
+--   rcases eventually_iff_exists_mem.mp h with ⟨s₂, hs₂, hy₂⟩,
+--   rcases mem_nhds_iff.mp (inter_mem hs₁ hs₂) with ⟨t, ht, Ht₁, Ht₂⟩,
+--   have m₁ : fderiv ℝ _ _ w = (0 : F),
+--   { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hv huv 
+--     (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
+--     simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
+--   have m₂ : fderiv ℝ _ _ v = (0 : F),
+--   { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hw huw
+--     (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
+--     simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
+--   rw ← m₂ at m₁,
+--   have diff₁ := (apply ℝ ℝ u).differentiable_at.comp _ (D23 zero_lt_two minor₀),
+--   have diff₁' := (apply ℝ ℝ v).differentiable_at.comp _ (D23 zero_lt_two minor₀),
+--   have diff₁'' := (apply ℝ ℝ w).differentiable_at.comp _ (D23 zero_lt_two minor₀),
+--   have diff₂ := (apply ℝ F v).differentiable_at.comp _ 
+--     ((D22 hf'.self_of_nhds).differentiable_at triv₃),
+--   have diff₂' := (apply ℝ F u).differentiable_at.comp _ 
+--     ((D22 hf'.self_of_nhds).differentiable_at triv₃),
+--   have diff₂'' := (apply ℝ F w).differentiable_at.comp _ 
+--     ((D22 hf'.self_of_nhds).differentiable_at triv₃),
+--   have diff₃ := (apply ℝ F v).differentiable_at.comp _ 
+--     ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
+--   have diff₃' := (apply ℝ F w).differentiable_at.comp _ 
+--     ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
+--   have diff_mk₁ := diff₁.smul diff₂,
+--   have diff_mk₁' := diff₁.smul diff₂'',
+--   have diff_mk₂ := diff₁'.smul diff₂',
+--   have diff_mk₂' := diff₁''.smul diff₂',
+--   have diff_mk₃ := (minor₀.differentiable_at triv₃).smul diff₃,
+--   have diff_mk₃' := (minor₀.differentiable_at triv₃).smul diff₃',
+--   simp only [congr_arg, function.comp_app, apply_apply] at 
+--     diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃',
+--   have times₁ := hf'.mono (λ a ha, ha.of_le triv₂), 
+--   rw [fderiv_add (diff_mk₃.add diff_mk₂) diff_mk₁, fderiv_add diff_mk₃ diff_mk₂,
+--       fderiv_add (diff_mk₃'.add diff_mk₂') diff_mk₁', fderiv_add diff_mk₃' diff_mk₂'] at m₁,
+--   simp only [add_apply] at m₁,
+--   rw [J1 hf Hf Heven v w hu times₁, J1 hf Hf Heven u w hv times₁,
+--       J1 hf Hf Heven w v hu times₁, J1 hf Hf Heven u v hw times₁] at m₁,
+--   rw [J2' hf Hf Heven v w hu hf'.self_of_nhds, J2 hf Hf Heven w v hu hf'.self_of_nhds] at m₁,
+--   rw [second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
+--       (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w u, 
+--       second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
+--       (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at u v,
+--       second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
+--       (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w v] at m₁,
+--   rw second_derivative_symmetric_of_eventually minor₄ (D23 zero_lt_two minor₀).has_fderiv_at at m₁,
+-- end
 
 end tot_diff_eq
 
