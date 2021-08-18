@@ -355,28 +355,6 @@ begin
   exact GG1 hf Hf Heven hv hf'
 end
 
--- lemma GGG {u v : E} (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
---   (hf' : times_cont_diff_at ℝ 2 f x) (h : function.surjective (fderiv ℝ f x)): 
---   (similarity_factor_sqrt_inv conf_diff) • (fderiv ℝ (fderiv ℝ f) x u v) +
---   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v) • fderiv ℝ f x u + 
---   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x u) • fderiv ℝ f x v = 0 :=
--- begin
---   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
---   have minor₁ := (D22 hf').congr_of_eventually_eq Heven.symm,
---   have key := similarity_factor_sqrt_inv_fderiv x psuedo_conf zero_lt_one minor₁,
---   rw [G' hf hf' h huv, key],
---   simp only [is_R_or_C.coe_real_eq_id, _root_.id],
---   rw [GG1 hf Hf Heven hu hf', GG2 hf Hf Heven hv hf'],
---   simp only [smul_add, smul_smul, pi.neg_apply, pi.mul_apply, congr_arg],
---   rw [← similarity_factor_sqrt_inv_eq', inv_pow', inv_inv', pow_two],
---   rw similarity_factor_sqrt_inv_eq_of_eventually_eq conf_diff Heven,
---   nth_rewrite 1 add_comm,
---   simp only [← add_assoc, ← add_smul, add_assoc, ← add_smul],
---   rw [neg_mul_eq_neg_mul_symm, neg_add_eq_sub],
---   simp only [mul_assoc, mul_comm, sub_self, zero_smul],
---   simp
--- end
-
 open filter
 open_locale filter
 
@@ -492,7 +470,7 @@ begin
   rw this
 end
 
-lemma tot1 {u v w : E} {s : set E} 
+lemma tot1 {u v w : E}
   (hu : u ≠ 0) (hv : v ≠ 0) (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0) (hwv : ⟪w, v⟫ = 0)
   (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
   (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
@@ -578,8 +556,11 @@ begin
       (A conf_diff').mp hwv, mul_zero, zero_div]
 end
 
-end tot_diff_eq
+lemma line_break : 1 = 1 := rfl
 
+#lint
+
+end tot_diff_eq
 
 -- h = u
 -- k = v
