@@ -11,7 +11,7 @@ open_locale classical real_inner_product_space filter topological_space
 
 section quick
 
-lemma quick1 {F : Type*} [inner_product_space ℝ F] {a b c d e e' f : F} 
+lemma quick1 {F : Type*} [add_comm_group F] {a b c d e e' f : F} 
   (h : a + b + (c + d) + (e + f) = d + b + (c + a) + (e' + f)) : e = e' :=
 begin
   simp_rw [← add_assoc] at h,
@@ -486,7 +486,7 @@ begin
   { apply with_top.coe_le_coe.mpr,
     norm_num },
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
-  have minor₀ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+  have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
     ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
   have minor₂ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
   have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
@@ -507,9 +507,9 @@ begin
     (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
     simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
   rw ← m₂ at m₁,
-  have diff₁ := (apply ℝ ℝ u).differentiable_at.comp _ (D23 zero_lt_two minor₀),
-  have diff₁' := (apply ℝ ℝ v).differentiable_at.comp _ (D23 zero_lt_two minor₀),
-  have diff₁'' := (apply ℝ ℝ w).differentiable_at.comp _ (D23 zero_lt_two minor₀),
+  have diff₁ := (apply ℝ ℝ u).differentiable_at.comp _ (D23 zero_lt_two minor₁),
+  have diff₁' := (apply ℝ ℝ v).differentiable_at.comp _ (D23 zero_lt_two minor₁),
+  have diff₁'' := (apply ℝ ℝ w).differentiable_at.comp _ (D23 zero_lt_two minor₁),
   have diff₂ := (apply ℝ F v).differentiable_at.comp _ 
     ((D22 hf'.self_of_nhds).differentiable_at triv₃),
   have diff₂' := (apply ℝ F u).differentiable_at.comp _ 
@@ -524,8 +524,8 @@ begin
   have diff_mk₁' := diff₁.smul diff₂'',
   have diff_mk₂ := diff₁'.smul diff₂',
   have diff_mk₂' := diff₁''.smul diff₂',
-  have diff_mk₃ := (minor₀.differentiable_at triv₃).smul diff₃,
-  have diff_mk₃' := (minor₀.differentiable_at triv₃).smul diff₃',
+  have diff_mk₃ := (minor₁.differentiable_at triv₃).smul diff₃,
+  have diff_mk₃' := (minor₁.differentiable_at triv₃).smul diff₃',
   simp only [congr_arg, function.comp_app, apply_apply] at 
     diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃',
   have times₁ := hf'.mono (λ a ha, ha.of_le triv₂), 
@@ -541,8 +541,8 @@ begin
       (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at u v,
       second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
       (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w v] at m₁,
-  rw second_derivative_symmetric_of_eventually minor₄ (D23 zero_lt_two minor₀).has_fderiv_at at m₁,
-  clear minor₀ minor₂ minor₃ minor₄ m₂ diff₁ diff₁' diff₁'' diff₂ diff₂' diff₂'' diff₃ 
+  rw second_derivative_symmetric_of_eventually minor₄ (D23 zero_lt_two minor₁).has_fderiv_at at m₁,
+  clear minor₁ minor₂ minor₃ minor₄ m₂ diff₁ diff₁' diff₁'' diff₂ diff₂' diff₂'' diff₃ 
     diff₃' diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃' times₁,
   -- if I don't make a `quick1` lemma them there will be a time-out failure.
   have key := quick1 m₁,
@@ -556,11 +556,18 @@ begin
       (A conf_diff').mp hwv, mul_zero, zero_div]
 end
 
-lemma line_break : 1 = 1 := rfl
-
-#lint
-
 end tot_diff_eq
+
+section bilin_form_and_local_prop
+
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
+  {s : set E} (hs : is_open s) (hfs : ∀ x ∈ s, conformal_at f x) 
+  {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x') 
+  (Hevens : ∀ x ∈ s, fderiv ℝ f =ᶠ[𝓝 x] f')
+
+lemma bilin1 (hrank : ∀ (u v : E), ∃ w, ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0)
+
+end bilin_form_and_local_prop
 
 -- h = u
 -- k = v
