@@ -123,13 +123,15 @@ begin
 end
 
 /-- The scaling factor -/
-def bilin_form_scale_factor [nontrivial E] {B : E → (bilin_form ℝ E)} 
-  (hB : ∀ x u v, ⟪u, v⟫ = 0 → B x u v = 0) (hB' : ∀ x, sym_bilin_form.is_sym (B x)) (x : E) : ℝ :=
-classical.some (sym_bilin_form_eq_const_mul_inner (hB x) $ hB' x)
+def bilin_form_scale_factor [nontrivial E] {B : E → (bilin_form ℝ E)} {s : set E}
+  (hB : ∀ x (hx : x ∈ s) u v, ⟪u, v⟫ = 0 → B x u v = 0) 
+  (hB' : ∀ x (hx : x ∈ s), sym_bilin_form.is_sym (B x)) {x : E} (hx : x ∈ s) : ℝ :=
+classical.some (sym_bilin_form_eq_const_mul_inner (hB x hx) $ hB' x hx)
 
-lemma bilin_form_scale_factor_spec [nontrivial E] {B : E → (bilin_form ℝ E)} 
-  (hB : ∀ x u v, ⟪u, v⟫ = 0 → B x u v = 0) (hB' : ∀ x, sym_bilin_form.is_sym (B x)) (x : E) :
-  ∀ u v, B x u v = (bilin_form_scale_factor hB hB' x) * ⟪u, v⟫ :=
-classical.some_spec (sym_bilin_form_eq_const_mul_inner (hB x) $ hB' x)
+lemma bilin_form_scale_factor_spec [nontrivial E] {B : E → (bilin_form ℝ E)} {s : set E}
+  (hB : ∀ x (hx : x ∈ s) u v, ⟪u, v⟫ = 0 → B x u v = 0) 
+  (hB' : ∀ x (hx : x ∈ s), sym_bilin_form.is_sym (B x)) {x : E} (hx : x ∈ s) :
+  ∀ u v, B x u v = (bilin_form_scale_factor hB hB' hx) * ⟪u, v⟫ :=
+classical.some_spec (sym_bilin_form_eq_const_mul_inner (hB x hx) $ hB' x hx)
 
 end bilin_form_eq
