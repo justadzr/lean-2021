@@ -6,7 +6,7 @@ import analysis.calculus.fderiv_symmetric
 
 noncomputable theory
 
-open conformal_at submodule set
+open conformal_at set
 open_locale classical real_inner_product_space filter topological_space
 
 section quick
@@ -29,6 +29,7 @@ end
 end quick
 
 section linear_conformal_prep
+open submodule
 
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {x : E}
 
@@ -174,6 +175,7 @@ lemma DD2 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f 
 end diff_prep
 
 section tot_diff_eq
+open submodule
 
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
 
@@ -544,7 +546,7 @@ begin
   rw second_derivative_symmetric_of_eventually minor₄ (D23 zero_lt_two minor₁).has_fderiv_at at m₁,
   clear minor₁ minor₂ minor₃ minor₄ m₂ diff₁ diff₁' diff₁'' diff₂ diff₂' diff₂'' diff₃ 
     diff₃' diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃' times₁,
-  -- if I don't make a `quick1` lemma them there will be a time-out failure.
+  -- if I don't make a `quick1` lemma the there will be a time-out failure.
   have key := quick1 m₁,
   clear m₁,
   have triv₄ : ⟪fderiv ℝ f x w, fderiv ℝ f x w⟫ ≠ 0 := 
@@ -559,13 +561,48 @@ end
 end tot_diff_eq
 
 section bilin_form_and_local_prop
+open continuous_linear_map filter
 
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
   {s : set E} (hs : is_open s) (hfs : ∀ x ∈ s, conformal_at f x) 
-  {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x') 
-  (Hevens : ∀ x ∈ s, fderiv ℝ f =ᶠ[𝓝 x] f')
+  (hf's : ∀ x ∈ s, times_cont_diff_at ℝ 4 f x) 
+  (hsurj : ∀ x ∈ s , function.surjective (fderiv ℝ f x))
+  {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x')
+  (Hevens : ∀ x ∈ s, fderiv ℝ f x = f' x)
 
-lemma bilin1 (hrank : ∀ (u v : E), ∃ w, ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0)
+localized "notation `psuedo_conf` := λ y, @filter.eventually_of_forall _ _ (𝓝 y) (λ x', Hf x')"
+  in liouville_do_not_use
+
+def to_sym_bilin_form (x : E) : bilin_form ℝ E :=
+{ bilin := λ u v, fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u,
+  bilin_add_left := λ x y z, by simp only [map_add],
+  bilin_smul_left := λ s x y, by simp only [map_smul, smul_eq_mul],
+  bilin_add_right := λ x y z, by simp only [map_add, add_apply],
+  bilin_smul_right := λ s x y, by simp only [map_smul, smul_apply, smul_eq_mul] }
+
+include hs hfs Hevens hf's
+
+lemma is_sym_to_sym_bilin_form [nontrivial E] {x : E} (hx : x ∈ s) :
+  sym_bilin_form.is_sym (to_sym_bilin_form Hf x) :=
+λ u v, begin
+  have hf := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, hfs a ha⟩,
+  have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
+  have hf' := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, hf's a ha⟩,
+  have triv : (3 : with_top ℕ) ≤ 4,
+  { apply with_top.coe_le_coe.mpr,
+    norm_num },
+  have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+    ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
+  have minor₂ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
+    hf'.mono (λ a ha, D22 $ ha.of_le triv),
+  have minor₃ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
+    (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
+    D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+    minor₂.self_of_nhds.congr_of_eventually_eq Heven.symm),
+  rw [to_sym_bilin_form, bilin_form.coe_fn_mk, 
+      second_derivative_symmetric_of_eventually minor₃ (D23 zero_lt_two minor₁).has_fderiv_at]
+end
+
 
 end bilin_form_and_local_prop
 
