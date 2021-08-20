@@ -545,7 +545,8 @@ begin
         (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at u v,
         second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
         (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w v] at m₁,
-    rw second_derivative_symmetric_of_eventually minor₄ (D23 zero_lt_two minor₁).has_fderiv_at at m₁,
+    rw second_derivative_symmetric_of_eventually minor₄ 
+      (D23 zero_lt_two minor₁).has_fderiv_at at m₁,
     clear minor₁ minor₂ minor₃ minor₄ m₂ diff₁ diff₁' diff₁'' diff₂ diff₂' diff₂'' diff₃ 
       diff₃' diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃' times₁,
     -- if I don't make a `quick1` lemma the there will be a time-out failure.
@@ -624,14 +625,40 @@ lemma hB (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v�
   exact tot1 hf Hf Heven hw' huv' huw' hwv' hf' h
 end
 
-lemma diff_bilin {x : E} (hx : x ∈ s) (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0):
-  differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank) 
-  (λ y hy, is_sym_to_sym_bilin_form hs hfs Hevens hf's hy) x') :=
-begin
-  have :
+variables [complete_space E] [nontrivial E]
 
+lemma diff_bilin {x : E} (hx : x ∈ s) (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0) :
+  differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank) 
+  (λ y hy, is_sym_to_sym_bilin_form hs hfs hf's Hf Hevens hy) x') x :=
+begin
+  rcases hrank 0 0 with ⟨w₀, hw₀, _⟩,
+  have hb := hB hs hfs hf's hsurj Hf Hevens hrank,
+  have hb' := λ y hy, is_sym_to_sym_bilin_form hs hfs hf's Hf Hevens hy,
+  have triv₁ : ⟪w₀, w₀⟫ ≠ 0 := λ W, hw₀ (inner_self_eq_zero.mp W),
+  have minor₁ : (λ x', to_sym_bilin_form Hf x' w₀ w₀ / ⟪w₀, w₀⟫) =ᶠ[𝓝 x] 
+    λ x', (bilin_form_factor hb hb' x'),
+  { refine eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy, _⟩,
+    simp only [congr_arg, bilin_form_factor_spec hb hb' hy],
+    rw mul_div_cancel _ triv₁ },
+  sorry,  
 end
-#check tot1
+
+/-
+TODO List:
+08 21
+* Separate the third order `fderiv` symmetry lemma
+* Prove a `is_const_of_fderiv_eq` lemma for general open sets
+* Prove the `times_cont_diff` regularities to `to_sym_bilin_form`
+(* Refine the rank condition: can I make `[nontrivial E]` disappear?)
+08 22
+* Prove the local conformalities of the local inverse function
+08 23
+* Think of a way to state the geometric results as a linear algebra results
+08 24
+* Really need to by pass the transcendental function part.
+08 25
+* Try to complete the proof.
+-/
   
 
 end bilin_form_and_local_prop
