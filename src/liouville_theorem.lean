@@ -1,5 +1,6 @@
 import analysis.calculus.conformal
 import similarity
+import bilin_form_lemmas
 import data.matrix.notation
 import analysis.calculus.times_cont_diff
 import analysis.calculus.fderiv_symmetric
@@ -624,7 +625,12 @@ lemma hB (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v�
 end
 
 lemma diff_bilin {x : E} (hx : x ∈ s) (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0):
-  differentiable_at ℝ (λ x', bilin_form_factor)
+  differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank) 
+  (λ y hy, is_sym_to_sym_bilin_form hs hfs Hevens hf's hy) x') :=
+begin
+  have :
+
+end
 #check tot1
   
 
