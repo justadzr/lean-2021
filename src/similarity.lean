@@ -39,6 +39,7 @@ begin
   exact mul_right_cancel' minor₃ key.symm
 end
 
+/-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_times_cont_diff_at [nontrivial E] (x : E)
   (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map (f' y)) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) : 
   times_cont_diff_at ℝ n (λ y, similarity_factor $ h y) x :=
@@ -93,6 +94,7 @@ begin
              real.sq_sqrt (le_of_lt (similarity_factor_prop h).1)]
 end
 
+/-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_times_cont_diff_at [nontrivial E] (x : E)
   (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
   times_cont_diff_at ℝ n (λ y, similarity_factor_sqrt $ h y) x :=
@@ -114,6 +116,7 @@ lemma similarity_factor_sqrt_inv_eq' {x : E} (h : ∀ᶠ x' in 𝓝 x, is_confor
 by simp only [similarity_factor_sqrt_inv, similarity_factor_sqrt, 
               inv_inv', real.sq_sqrt (le_of_lt (similarity_factor_prop h).1)]
 
+/-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_inv_eq (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) :
   (λ x, (similarity_factor_sqrt_inv $ h x)⁻¹ ^ 2) = (λ x, similarity_factor $ h x) :=
 begin
@@ -129,6 +132,7 @@ lemma similarity_factor_sqrt_inv_eq_of_eventually_eq [nontrivial E] {x : E} {f''
   similarity_factor_sqrt_inv hf' :=
 by simp only [similarity_factor_sqrt_inv, similarity_factor_sqrt_eq_of_eventually_eq]
 
+/-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_inv_eq_comp_inv (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) :
   (λ x, similarity_factor_sqrt_inv $ h x) = (λ x, x⁻¹) ∘ (λ x, similarity_factor_sqrt $ h x) :=
 begin
@@ -144,6 +148,7 @@ begin
   simp only [(similarity_factor_sqrt_prop h).2, similarity_factor_sqrt_inv, inv_inv']
 end
 
+/-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_inv_times_cont_diff_at [nontrivial E] (x : E)
   (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
   times_cont_diff_at ℝ n (λ x, similarity_factor_sqrt_inv $ h x) x :=
@@ -153,6 +158,7 @@ begin
   exact similarity_factor_sqrt_times_cont_diff_at x h H
 end
 
+/-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_inv_fderiv [nontrivial E] 
   (x : E) (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) 
   {n : ℕ} (hn : 0 < n) (H : times_cont_diff_at ℝ n f' x) :
