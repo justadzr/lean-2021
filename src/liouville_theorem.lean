@@ -103,7 +103,7 @@ end
 end linear_conformal_prep
 
 open continuous_linear_map
-open_locale topological_space
+open_locale topological_space filter
 
 lemma DD1 {E F : Type*} [normed_group E] [normed_space ℝ E] [normed_group F] [normed_space ℝ F] 
   {f : E → F} {f' : E → (E →L[ℝ] F)} {y u : E} (hf : ∀ᶠ (x : E) in 𝓝 y, has_fderiv_at f (f' x) x)
@@ -172,6 +172,26 @@ lemma D23 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f 
 lemma DD2 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y) (u : E) :
   differentiable_at ℝ (λ x, fderiv ℝ f x u) y :=
 (apply ℝ F u).differentiable_at.comp _ (D23 hn hf)
+
+lemma third_order_symmetric {x u v w : E} (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
+  fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v = fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
+begin
+  have minor₁ : ∀ᶠ x' in 𝓝 x, has_fderiv_at ((apply ℝ _ u) ∘ (fderiv ℝ f)) 
+    ((apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') x' :=
+    hf'.mono (λ y hy, (apply ℝ F u).has_fderiv_at.comp _ (D23 zero_lt_three hy).has_fderiv_at),
+  have minor₂ : (λ x', (apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') =ᶠ[𝓝 x] λ x',
+    (((apply ℝ (E →L[ℝ] F)) u) ∘ fderiv ℝ (fderiv ℝ f)) x' :=
+  hf'.mono (λ y hy, begin
+    ext1,
+    simp only [coe_comp', function.comp_app, apply_apply],
+    rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_three hy).has_fderiv_at
+  end),
+  have key := (apply ℝ (E →L[ℝ] F) u).has_fderiv_at.comp _
+    (D23 zero_lt_two $ D22 hf'.self_of_nhds).has_fderiv_at,
+  have := second_derivative_symmetric_of_eventually minor₁ (key.congr_of_eventually_eq minor₂) v w,
+  simp only [coe_comp', function.comp_app, apply_apply] at this,
+  rw this
+end
 
 end diff_prep
 
@@ -451,27 +471,7 @@ lemma J2' {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_con
   = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
   fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
-begin
-  rw J2 hf Hf Heven v w hu hf'.self_of_nhds,
-  have minor₁ : ∀ᶠ x' in 𝓝 x, has_fderiv_at ((apply ℝ _ u) ∘ (fderiv ℝ f)) 
-    ((apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') x' :=
-    hf'.mono (λ y hy, (apply ℝ F u).has_fderiv_at.comp _ (D23 zero_lt_three hy).has_fderiv_at),
-  have minor₂ : (λ x', (apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') =ᶠ[𝓝 x] λ x',
-    (((apply ℝ (E →L[ℝ] F)) u) ∘ fderiv ℝ (fderiv ℝ f)) x' :=
-  hf'.mono (λ y hy, begin
-    ext1,
-    simp only [coe_comp', function.comp_app, apply_apply],
-    rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_three hy).has_fderiv_at
-  end),
-  -- if I don't break them there will be a time-out failure.
-  have subkey₁ := (D23 zero_lt_two $ D22 hf'.self_of_nhds).has_fderiv_at,
-  have subkey₂ := (apply ℝ (E →L[ℝ] F) u).has_fderiv_at.comp _,
-  have subkey₃ := subkey₂ subkey₁,
-  have := second_derivative_symmetric_of_eventually minor₁ 
-    (subkey₃.congr_of_eventually_eq minor₂) v w,
-  simp only [coe_comp', function.comp_app, apply_apply] at this,
-  rw this
-end
+by rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, third_order_symmetric hf']
 
 lemma tot1 {u v w : E}
   (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0) (hwv : ⟪w, v⟫ = 0)
@@ -646,9 +646,9 @@ end
 /-
 TODO List:
 08 21
-* Separate the third order `fderiv` symmetry lemma
+✓✓✓ * Separate the third order `fderiv` symmetry lemma
 * Prove a `is_const_of_fderiv_eq` lemma for general open sets
-* Prove the `times_cont_diff` regularities to `to_sym_bilin_form`
+* Prove the `times_cont_diff` regularities of `to_sym_bilin_form`
 (* Refine the rank condition: can I make `[nontrivial E]` disappear?)
 08 22
 * Prove the local conformalities of the local inverse function
