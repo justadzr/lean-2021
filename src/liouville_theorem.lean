@@ -173,21 +173,21 @@ lemma DD2 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f 
   differentiable_at ℝ (λ x, fderiv ℝ f x u) y :=
 (apply ℝ F u).differentiable_at.comp _ (D23 hn hf)
 
-lemma third_order_symmetric {x u v w : E} (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
+lemma third_order_symmetric {x u v w : E} (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') :
   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v = fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
 begin
   have minor₁ : ∀ᶠ x' in 𝓝 x, has_fderiv_at ((apply ℝ _ u) ∘ (fderiv ℝ f)) 
     ((apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') x' :=
-    hf'.mono (λ y hy, (apply ℝ F u).has_fderiv_at.comp _ (D23 zero_lt_three hy).has_fderiv_at),
+    hf'.mono (λ y hy, (apply ℝ F u).has_fderiv_at.comp _ (D23 zero_lt_two hy).has_fderiv_at),
   have minor₂ : (λ x', (apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') =ᶠ[𝓝 x] λ x',
     (((apply ℝ (E →L[ℝ] F)) u) ∘ fderiv ℝ (fderiv ℝ f)) x' :=
   hf'.mono (λ y hy, begin
     ext1,
     simp only [coe_comp', function.comp_app, apply_apply],
-    rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_three hy).has_fderiv_at
+    rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_two hy).has_fderiv_at
   end),
   have key := (apply ℝ (E →L[ℝ] F) u).has_fderiv_at.comp _
-    (D23 zero_lt_two $ D22 hf'.self_of_nhds).has_fderiv_at,
+    (D23 zero_lt_one $ D22 hf'.self_of_nhds).has_fderiv_at,
   have := second_derivative_symmetric_of_eventually minor₁ (key.congr_of_eventually_eq minor₂) v w,
   simp only [coe_comp', function.comp_app, apply_apply] at this,
   rw this
@@ -471,7 +471,9 @@ lemma J2' {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_con
   = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
   fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
-by rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, third_order_symmetric hf']
+by rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, 
+       third_order_symmetric (hf'.mono $ λ a ha, ha.of_le $ 
+       by { apply with_top.coe_le_coe.mpr, norm_num })]
 
 lemma tot1 {u v w : E}
   (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0) (hwv : ⟪w, v⟫ = 0)
@@ -638,7 +640,7 @@ begin
   have minor₁ : (λ x', to_sym_bilin_form Hf x' w₀ w₀ / ⟪w₀, w₀⟫) =ᶠ[𝓝 x] 
     λ x', (bilin_form_factor hb hb' x'),
   { refine eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy, _⟩,
-    simp only [congr_arg, bilin_form_factor_spec hb hb' hy],
+    simp only [congr_arg, bilin_form_factor_prop hb hb' hy],
     rw mul_div_cancel _ triv₁ },
   sorry,  
 end

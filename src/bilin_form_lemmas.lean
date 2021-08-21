@@ -105,7 +105,7 @@ dite (x ∈ s)
 (λ (hx : x ∈ s), classical.some $ sym_bilin_form_eq_const_mul_inner (hB x hx) $ hB' x hx)
 (λ (hx : ¬ x ∈ s), 0)
 
-lemma bilin_form_factor_spec {B : E → (bilin_form ℝ E)} {s : set E}
+lemma bilin_form_factor_prop {B : E → (bilin_form ℝ E)} {s : set E}
   (hB : ∀ x (hx : x ∈ s) u v, ⟪u, v⟫ = 0 → B x u v = 0) 
   (hB' : ∀ x (hx : x ∈ s), sym_bilin_form.is_sym (B x)) {x : E} (hx : x ∈ s) :
   ∀ u v, B x u v = (bilin_form_factor hB hB' x) * ⟪u, v⟫ :=
