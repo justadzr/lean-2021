@@ -571,7 +571,7 @@ end
 
 end tot_diff_eq
 
-section bilin_form_and_local_prop
+section bilin_form_and_local_prop 
 open continuous_linear_map filter
 
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
@@ -642,7 +642,20 @@ begin
   { refine eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy, _⟩,
     simp only [congr_arg, bilin_form_factor_prop hb hb' hy],
     rw mul_div_cancel _ triv₁ },
-  sorry,  
+  simp only [to_sym_bilin_form, bilin_form.coe_fn_mk] at minor₁,
+  refine differentiable_at.congr_of_eventually_eq _ minor₁.symm,
+  simp only [div_eq_mul_inv, ← smul_eq_mul],
+  apply differentiable_at.smul_const,
+  have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
+  have triv₂ : (λ x', fderiv ℝ (fderiv ℝ $ λ y, 
+    similarity_factor_sqrt_inv $ psuedo_conf y) x' w₀ w₀) = (apply ℝ _ w₀) ∘ 
+    (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' w₀),
+  { ext1,
+    simp only [apply_apply, function.comp_app] },
+  rw triv₂,
+  refine (apply ℝ ℝ w₀).differentiable_at.comp _ (DD2 zero_lt_one (D22 _) w₀),
+  exact similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+    ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm)
 end
 
 /-
@@ -650,7 +663,7 @@ TODO List:
 08 21
 ✓✓✓ * Separate the third order `fderiv` symmetry lemma
 * Prove a `is_const_of_fderiv_eq` lemma for general open sets
-* Prove the `times_cont_diff` regularities of `to_sym_bilin_form`
+✓✓✓ * Prove the differentiability `to_sym_bilin_form`
 (* Refine the rank condition: can I make `[nontrivial E]` disappear?)
 08 22
 * Prove the local conformalities of the local inverse function
