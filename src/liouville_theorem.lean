@@ -133,6 +133,49 @@ begin
   exact (apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ hf'
 end
 
+lemma is_open.is_const_of_fderiv_eq_zero {E F 𝕜 : Type*} [normed_group E] [normed_space ℝ E] 
+  [is_R_or_C 𝕜] [normed_space 𝕜 E] [is_scalar_tower ℝ 𝕜 E] [normed_group F] [normed_space 𝕜 F] 
+  {f : E → F} {s : set E} (hs : is_open s) (hs' : is_connected s) (hf : differentiable_on 𝕜 f s) 
+  (h : ∀ (x : E), x ∈ s → fderiv 𝕜 f x = 0) {x y : E} (hx : x ∈ s) (hy : y ∈ s) :
+  f x = f y :=
+begin
+  rw is_connected_iff_connected_space at hs'; resetI,
+  let S : set s := {a : s | f a = f x},
+  have triv₁ : S.nonempty := ⟨⟨x, hx⟩, rfl⟩,
+  have triv₂ := continuous_on_iff_continuous_restrict.mp hf.continuous_on,
+  have minor₁ : is_closed S := is_closed_eq triv₂ continuous_const,
+  have minor₂ : is_open S :=
+  is_open_iff_forall_mem_open.mpr begin
+    intros t ht,
+    rcases metric.is_open_iff.mp hs t.1 t.2 with ⟨ε, hε, hball⟩,
+    have subminor₁ : ∀ (x' : E), x' ∈ metric.ball t.1 ε → 
+      fderiv_within 𝕜 f (metric.ball t.1 ε) x' = 0 := 
+    λ x' hx', begin
+      convert h x' (hball hx'),
+      exact fderiv_within_of_open metric.is_open_ball hx'
+    end,
+    have subminor₂ : coe⁻¹' (metric.ball t.1 ε) ⊆ S :=
+    λ a ha, begin
+      have := (convex_ball t.1 ε).is_const_of_fderiv_within_eq_zero (hf.mono hball) 
+        subminor₁ ha (metric.mem_ball_self hε),
+      simp only [set.mem_set_of_eq] at ht,
+      rw [subtype.val_eq_coe, ht] at this,
+      exact this
+    end,
+    refine ⟨coe⁻¹' (metric.ball t.1 ε), subminor₂, 
+      metric.is_open_ball.preimage continuous_subtype_coe, _⟩,
+    simp only [subtype.val_eq_coe],
+    exact metric.mem_ball_self hε
+  end,
+  have key : f y = f x := begin
+    suffices new : (⟨y, hy⟩ : s) ∈ S,
+    { exact new },
+    { rw eq_univ_of_nonempty_clopen triv₁ ⟨minor₂, minor₁⟩,
+      exact mem_univ _ }
+  end,
+  exact key.symm
+end
+
 section diff_prep
 
 variables {E F : Type*} [normed_group E] [normed_group F] 
