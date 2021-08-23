@@ -634,31 +634,25 @@ def to_sym_bilin_form (x : E) : bilin_form ℝ E :=
   bilin_add_right := λ x y z, by simp only [map_add, add_apply],
   bilin_smul_right := λ s x y, by simp only [map_smul, smul_apply, smul_eq_mul] }
 
-include hs hfs Hevens hf's
+include hs Hevens hf's
 
 lemma is_sym_to_sym_bilin_form [nontrivial E] {x : E} (hx : x ∈ s) :
   sym_bilin_form.is_sym (to_sym_bilin_form Hf x) :=
 λ u v, begin
   have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
-  have hf' := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, hf's a ha⟩,
-  have triv : (3 : with_top ℕ) ≤ 4,
-  { apply with_top.coe_le_coe.mpr,
-    norm_num },
   have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
-    ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
-  have minor₂ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
-    hf'.mono (λ a ha, D22 $ ha.of_le triv),
-  have minor₃ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
+    ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
+  have minor₂ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
     (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
     D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
-    minor₂.self_of_nhds.congr_of_eventually_eq Heven.symm),
+    (D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
   rw [to_sym_bilin_form, bilin_form.coe_fn_mk, 
-      second_derivative_symmetric_of_eventually minor₃ (D23 zero_lt_two minor₁).has_fderiv_at]
+      second_derivative_symmetric_of_eventually minor₂ (D23 zero_lt_two minor₁).has_fderiv_at]
 end
 
-include hsurj
+include hfs hsurj
 
-lemma hB (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0) : 
+lemma hB (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0) : 
   ∀ x' (hx' : x' ∈ s) u' v', ⟪u', v'⟫ = 0 → to_sym_bilin_form Hf x' u' v' = 0 :=
 λ x' hx' u' v' huv', begin
   have hf := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hfs a ha⟩,
@@ -666,19 +660,20 @@ lemma hB (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v�
   have hf' := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hf's a ha⟩,
   have h := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hsurj a ha⟩,
   simp only [to_sym_bilin_form],
-  rcases hrank u' v' with ⟨w', hw', huw', hwv'⟩,
+  rcases hrank3 u' v' with ⟨w', hw', huw', hwv'⟩,
   exact tot1 hf Hf Heven hw' huv' huw' hwv' hf' h
 end
 
-variables [complete_space E] [nontrivial E]
+variables [complete_space E] [nontrivial E] 
+  (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0)
 
-lemma diff_bilin {x : E} (hx : x ∈ s) (hrank : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0) :
-  differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank) 
-  (λ y hy, is_sym_to_sym_bilin_form hs hfs hf's Hf Hevens hy) x') x :=
+lemma diff_bilin {x : E} (hx : x ∈ s) :
+  differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank3) 
+  (λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy) x') x :=
 begin
-  rcases hrank 0 0 with ⟨w₀, hw₀, _⟩,
-  have hb := hB hs hfs hf's hsurj Hf Hevens hrank,
-  have hb' := λ y hy, is_sym_to_sym_bilin_form hs hfs hf's Hf Hevens hy,
+  rcases hrank3 0 0 with ⟨w₀, hw₀, _⟩,
+  have hb := hB hs hfs hf's hsurj Hf Hevens hrank3,
+  have hb' := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy,
   have triv₁ : ⟪w₀, w₀⟫ ≠ 0 := λ W, hw₀ (inner_self_eq_zero.mp W),
   have minor₁ : (λ x', to_sym_bilin_form Hf x' w₀ w₀ / ⟪w₀, w₀⟫) =ᶠ[𝓝 x] 
     λ x', (bilin_form_factor hb hb' x'),
@@ -701,25 +696,86 @@ begin
     ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm)
 end
 
+localized "notation `H₁` := hB hs hfs hf's hsurj Hf Hevens hrank3" in liouville_do_not_use
+localized "notation `H₂` := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy" 
+  in liouville_do_not_use
+
+lemma fderiv_fderiv_eq_bilin_form_factor_mul {x : E} (hx : x ∈ s) (u v : E) :
+  (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v u) =ᶠ[𝓝 x] 
+  λ x', (bilin_form_factor H₁ H₂ x') * ⟪u, v⟫ :=
+eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy,
+  by simpa [to_sym_bilin_form, bilin_form.coe_fn_congr] using bilin_form_factor_prop H₁ H₂ hy u v⟩
+
+/-- Not sure if `is_connected s` is a correct hypothesis. But it seems that this argument is used
+  to show that the `bilin_form_factor` is indeed a constant. -/
+lemma is_const_bilin_form_factor (hs' : is_connected s) :
+  ∃ (c : ℝ), ∀ x (hx : x ∈ s), (λ x', bilin_form_factor H₁ H₂ x') =ᶠ[𝓝 x] function.const _ c :=
+begin
+  rcases hs'.nonempty with ⟨x₀, hx₀⟩,
+  refine ⟨bilin_form_factor H₁ H₂ x₀, λ x hx, 
+    eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, _⟩⟩,
+  have : ∀ y ∈ s, fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y = 0 :=
+  λ y hy, begin
+    have triv₁ : ∀ᶠ x' in 𝓝 y, 
+      times_cont_diff_at ℝ 3 (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' :=
+      eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ x' hx', 
+      similarity_factor_sqrt_inv_times_cont_diff_at x' psuedo_conf 
+      ((D22 $ hf's x' hx').congr_of_eventually_eq 
+      (eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, Hevens a ha⟩).symm)⟩,
+    have minor₁ := fderiv_fderiv_eq_bilin_form_factor_mul hs hfs hf's hsurj Hf Hevens hrank3 hy,
+    have minor₂ := diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hy,
+    have minor₃ : ∀ u v w, 
+      fderiv ℝ (fderiv ℝ $ fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) y w u v =
+      fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w * ⟪u, v⟫ :=
+    λ u v w, begin
+      have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ a ha, Hevens a ha⟩,
+      have subkey₁ := D21 (D22 $ similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+        (D22 $ hf's y hy).congr_of_eventually_eq Heven.symm),
+      rw [← DD1' subkey₁ (D23 zero_lt_one $ D22 triv₁.self_of_nhds), (minor₁ v u).fderiv_eq, 
+          fderiv_mul_const minor₂, smul_apply, real_inner_comm, smul_eq_mul, mul_comm]
+    end,
+    ext1 v,
+    simp only [zero_apply],
+    rcases hrank3 v v with ⟨w, hw, hvw, _⟩,
+    have key_aux : fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w • v -
+      fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v • w = 0 :=
+    by rw [← inner_self_eq_zero, inner_sub_right, real_inner_smul_right, real_inner_smul_right,
+           ← minor₃, ← minor₃, third_order_symmetric triv₁, sub_self],
+    have key := eq_of_sub_eq_zero key_aux,
+    have minor₅ : (fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v) *
+      (fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v) * ⟪w, w⟫ = 0 :=
+    by rw [mul_assoc, ← real_inner_smul_left, ← key, 
+           real_inner_smul_left, hvw, mul_zero, mul_zero],
+    exact mul_self_eq_zero.mp (eq_zero_of_ne_zero_of_mul_right_eq_zero 
+      (λ W, hw $ inner_self_eq_zero.mp W) minor₅)
+  end,
+  exact λ y hy, hs.is_const_of_fderiv_eq_zero hs' (λ x' hx', 
+    (diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hx').differentiable_within_at) this hy hx₀
+end
+
+end bilin_form_and_local_prop
+
+section conformality_of_local_inverse
+
+end conformality_of_local_inverse
 /-
 TODO List:
 08 21
 ✓✓✓ * Separate the third order `fderiv` symmetry lemma
-* Prove a `is_const_of_fderiv_eq` lemma for general open sets
+✓✓✓ * Prove a `is_const_of_fderiv_eq` lemma for general open sets
 ✓✓✓ * Prove the differentiability `to_sym_bilin_form`
 (* Refine the rank condition: can I make `[nontrivial E]` disappear?)
 08 22
 * Prove the local conformalities of the local inverse function
 08 23
-* Think of a way to state the geometric results as a linear algebra results
+* Think of a way to state the geometric results as a linear algebra result
 08 24
 * Really need to by pass the transcendental function part.
 08 25
 * Try to complete the proof.
 -/
-  
 
-end bilin_form_and_local_prop
+
 
 -- h = u
 -- k = v
