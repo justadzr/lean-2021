@@ -178,15 +178,15 @@ begin
   exact key.symm
 end
 
-lemma is_open.diff_by_const_of_fderiv_eq_fderiv {E F 𝕜 : Type*} [normed_group E] [normed_space ℝ E] 
+lemma is_open.eq_sub_add_of_fderiv_eq_fderiv {E F 𝕜 : Type*} [normed_group E] [normed_space ℝ E] 
   [is_R_or_C 𝕜] [normed_space 𝕜 E] [is_scalar_tower ℝ 𝕜 E] [normed_group F] [normed_space 𝕜 F] 
   {f g : E → F} {s : set E} (hs : is_open s) (hs' : is_connected s) 
   (hf : differentiable_on 𝕜 f s) (hg : differentiable_on 𝕜 g s) 
-  (h : ∀ x ∈ s, fderiv 𝕜 f x = fderiv 𝕜 g x) :
-  ∃ y₀, ∀ x ∈ s, f x = g x + y₀ :=
+  (h : ∀ x ∈ s, fderiv 𝕜 f x = fderiv 𝕜 g x) {x₀ : E} (hx₀ : x₀ ∈ s) :
+  ∀ x ∈ s, f x = g x - g x₀ + f x₀ :=
 begin
-  rcases hs'.nonempty with ⟨x₀, hx₀⟩,
-  refine ⟨f x₀ - g x₀, λ x hx, sub_eq_zero.mp _⟩,
+  refine λ x hx, sub_eq_zero.mp _,
+  rw [sub_add_eq_add_sub, ← add_sub],
   have triv₁ : f x₀ - (g x₀ + (f x₀ - g x₀)) = 0 := by simp,
   rw ← triv₁,
   have triv₂ : differentiable_on 𝕜 (λ y, f y - (g y + (f x₀ - g x₀))) s := hf.sub (hg.add_const _),
@@ -196,671 +196,689 @@ begin
       fderiv_add_const, h y hy, sub_self]
 end
 
-lemma is_open.diff_by_const_of_fderiv_eq_fderiv' {E F 𝕜 : Type*} [normed_group E] [normed_space ℝ E] 
+lemma is_open.exists_of_fderiv_eq_fderiv {E F 𝕜 : Type*} [normed_group E] [normed_space ℝ E] 
   [is_R_or_C 𝕜] [normed_space 𝕜 E] [is_scalar_tower ℝ 𝕜 E] [normed_group F] [normed_space 𝕜 F] 
   {f g : E → F} {s : set E} (hs : is_open s) (hs' : is_connected s) 
   (hf : differentiable_on 𝕜 f s) (hg : differentiable_on 𝕜 g s) 
   (h : ∀ x ∈ s, fderiv 𝕜 f x = fderiv 𝕜 g x) :
-  ∃ y₀, ∀ x ∈ s, f x = g x - y₀ :=
-let ⟨y₀, hy₀⟩ := hs.diff_by_const_of_fderiv_eq_fderiv hs' hf hg h in 
-  ⟨-y₀, λ x hx, by simpa [sub_neg_eq_add] using hy₀ x hx⟩
+  ∃ x₀ ∈ s, ∀ x ∈ s, f x = g x - g x₀ + f x₀ :=
+let ⟨x₀, hx₀⟩ := hs'.nonempty in ⟨x₀, hx₀, hs.eq_sub_add_of_fderiv_eq_fderiv hs' hf hg h hx₀⟩
 
-lemma is_open.clm_eq_clm_of_fderiv_eq_fderiv {E F 𝕜 : Type*} [is_R_or_C 𝕜]
-  [normed_group E] [normed_space ℝ E] [normed_space 𝕜 E] [is_scalar_tower ℝ 𝕜 E] 
-  [normed_group F] [normed_space ℝ F] [normed_space 𝕜 F] [is_scalar_tower ℝ 𝕜 F]
-  {f g : E →L[𝕜] F} {s : set E} (hs : is_open s) (hs' : is_connected s) 
-  (hf : differentiable_on 𝕜 f s) (hg : differentiable_on 𝕜 g s) 
-  (h : ∀ x ∈ s, fderiv 𝕜 f x = fderiv 𝕜 g x) :
-  ∀ x ∈ s, f x = g x :=
-λ x hx, begin
-  rcases hs.diff_by_const_of_fderiv_eq_fderiv hs' hf hg h with ⟨y₀, hy₀⟩,
-  have : y₀ = 0 :=
-  begin
-    cases subsingleton_or_nontrivial E with hE hE; resetI,
-    { specialize hy₀ x hx,
-      simpa [subsingleton.elim x 0, map_zero, map_zero, zero_add] using hy₀.symm },
-    { rcases metric.is_open_iff.mp hs x hx with ⟨ε, hε, hball⟩,
-      rcases exists_ne x with ⟨x', hx'⟩,
-      by_cases Hx : x = 0,
-      { rw Hx at hx',
-        let x'' := (ε / 3 * ∥x'∥⁻¹) • x',
-        have triv₁ : ∥x'' - x∥ = ε / 3 := 
-          by simp only [x'', sub_zero, Hx, norm_smul, norm_norm, 
-            real.norm_eq_abs, abs_mul, abs_inv, abs_norm_eq_norm, mul_assoc,
-            inv_mul_cancel (λ W, hx' $ norm_eq_zero.mp W), mul_one, 
-            abs_of_pos (div_pos hε zero_lt_three)],
-        have triv₁' : ∥x''∥ = ε / 3 := by convert triv₁; rw [Hx, sub_zero],
-        have triv₂ : ∥(2 : ℝ) • x'' - x∥ = (2 : ℝ) * ε / 3 :=
-          by rw [Hx, sub_zero, norm_smul, real.norm_eq_abs, triv₁']; simp [mul_div_assoc],
-        have minor₁ : x'' ∈ metric.ball x ε := mem_ball_iff_norm.mpr (by linarith [triv₁, hε]),
-        have minor₂ : (2 : ℝ) • x''  ∈ metric.ball x ε := 
-          mem_ball_iff_norm.mpr (by linarith [triv₂, hε]),
-        sorry,
-        -- have key : g ( (2 : ℝ) • x'') + y₀ = (2 : ℝ) • g x'' + (2 : ℝ) • y₀ :=
-        -- begin
-        --   simp only [map_smul, ← hy₀ x'' (hball minor₁)],
-        -- end,
-        
-      },
-      
-      {
-        sorry
-      } }
-      
-    --   let x'' := x + (ε / 2 * ∥x' - x∥⁻¹) • (x' - x),
-    --   have triv : ∥x'' - x∥ = ε / 2 :=
-    --   calc ∥x'' - x∥ = ∥(x + (ε / 2 * ∥x' - x∥⁻¹) • (x' - x)) - x∥
-    --     : by simp only [x'']
-    --     ... = ∥(ε / 2 * ∥x' - x∥⁻¹) • (x' - x)∥ 
-    --     : by rw add_comm; simp only [← add_sub, sub_self, add_zero]
-    --     ... = ∥ε / 2 * ∥x' - x∥⁻¹∥ * ∥x' - x∥ : by simp only [norm_smul]
-    --     ... = abs (ε / 2 * ∥x' - x∥⁻¹) * abs (∥x' - x∥)
-    --     : by simp only [← real.norm_eq_abs, norm_norm]
-    --     ... = abs ((ε / 2 * ∥x' - x∥⁻¹) * ∥x' - x∥) : by simp only [abs_mul]
-    --     ... = abs (ε / 2) : by rw [mul_assoc, inv_mul_cancel 
-    --       (ne_of_gt $ norm_pos_iff.mpr $ sub_ne_zero.mpr hx'), mul_one]
-    --     ... = ε / 2 : by simp only [abs_of_pos (div_pos hε zero_lt_two)],
-    --   have minor₁ : x'' ∈ metric.ball x ε := mem_ball_iff_norm.mpr (by linarith [triv, hε]),
-    --   have minor₂ : x'' ≠ x := sorry,
-    --   have key : f (x'' - x)
-    --   have key₁ := hy₀ x hx,
-    --   have key₂ := hy₀ x'' (hball minor₁),
-    -- },
-    
-  end,
-  sorry,
-end
+-- lemma is_open.exists_of_fderiv_eq_fderiv_of_has_fderiv_at 
+--   {E F 𝕜 : Type*} [normed_group E] [normed_space ℝ E] [is_R_or_C 𝕜] 
+--   [normed_space 𝕜 E] [is_scalar_tower ℝ 𝕜 E] [normed_group F] [normed_space 𝕜 F] 
+--   {f g : E → F} {f'} {s : set E} (hs : is_open s) (hs' : is_connected s) 
+--   (hf : differentiable_on 𝕜 f s) (hg : differentiable_on 𝕜 g s) 
+--   (h : ∀ x ∈ s, fderiv 𝕜 f x = fderiv 𝕜 g x) :
+--   ∃ x₀ ∈ s, ∀ x ∈ s, f x = g x - g x₀ + f x₀ :=
+-- begin
+
+-- end
 
 end diff_elementary
 
--- section diff_prep
+section diff_prep
 
--- variables {E F : Type*} [normed_group E] [normed_group F] 
---   [normed_space ℝ E] [normed_space ℝ F] {f : E → F}
+variables {E F : Type*} [normed_group E] [normed_group F] 
+  [normed_space ℝ E] [normed_space ℝ F] {f : E → F}
 
--- lemma D21 {y : E} {n : ℕ} (hf : times_cont_diff_at ℝ n.succ f y) :
---   ∀ᶠ (x : E) in 𝓝 y, has_fderiv_at f (fderiv ℝ f x) x :=
--- begin
---   rcases times_cont_diff_at_succ_iff_has_fderiv_at.mp hf with ⟨f', ⟨s, hs, hxs⟩, hf'⟩,
---   have minor₁ : ∀ (x : E), x ∈ s → differentiable_at ℝ f x := λ x hx, ⟨f' x, hxs x hx⟩,
---   have minor₂ : ∀ (x : E), x ∈ s → has_fderiv_at f (fderiv ℝ f x) x := 
---     λ x hx, (minor₁ x hx).has_fderiv_at,
---   rw filter.eventually_iff_exists_mem,
---   exact ⟨s, hs, minor₂⟩
--- end
+lemma D21 {y : E} {n : ℕ} (hf : times_cont_diff_at ℝ n.succ f y) :
+  ∀ᶠ (x : E) in 𝓝 y, has_fderiv_at f (fderiv ℝ f x) x :=
+begin
+  rcases times_cont_diff_at_succ_iff_has_fderiv_at.mp hf with ⟨f', ⟨s, hs, hxs⟩, hf'⟩,
+  have minor₁ : ∀ (x : E), x ∈ s → differentiable_at ℝ f x := λ x hx, ⟨f' x, hxs x hx⟩,
+  have minor₂ : ∀ (x : E), x ∈ s → has_fderiv_at f (fderiv ℝ f x) x := 
+    λ x hx, (minor₁ x hx).has_fderiv_at,
+  rw filter.eventually_iff_exists_mem,
+  exact ⟨s, hs, minor₂⟩
+end
 
--- lemma D22 {y : E} {n : ℕ} (hf : times_cont_diff_at ℝ n.succ f y) :
---   times_cont_diff_at ℝ n (fderiv ℝ f) y :=
--- begin
---   have triv₁ : (n : with_top ℕ) ≤ n + 1 := 
---     by { apply with_top.coe_le_coe.mpr, exact nat.le_succ _ },
---   have triv₂ : (1 : with_top ℕ) ≤ n + 1 := 
---     by { apply with_top.coe_le_coe.mpr, linarith },
---   rcases times_cont_diff_at_succ_iff_has_fderiv_at.mp hf with ⟨f', ⟨s, hs, hxs⟩, hf'⟩,
---   have minor₁ : ∀ (x : E), x ∈ s → differentiable_at ℝ f x := λ x hx, ⟨f' x, hxs x hx⟩,
---   have minor₂ : set.eq_on (fderiv ℝ f) f' s,
---   { intros x hxmem,
---     have := (hf.differentiable_at triv₂).has_fderiv_at,
---     exact (minor₁ x hxmem).has_fderiv_at.unique (hxs x hxmem) },
---   exact hf'.congr_of_eventually_eq (filter.eventually_eq_of_mem hs minor₂)
--- end
+lemma D22 {y : E} {n : ℕ} (hf : times_cont_diff_at ℝ n.succ f y) :
+  times_cont_diff_at ℝ n (fderiv ℝ f) y :=
+begin
+  have triv₁ : (n : with_top ℕ) ≤ n + 1 := 
+    by { apply with_top.coe_le_coe.mpr, exact nat.le_succ _ },
+  have triv₂ : (1 : with_top ℕ) ≤ n + 1 := 
+    by { apply with_top.coe_le_coe.mpr, linarith },
+  rcases times_cont_diff_at_succ_iff_has_fderiv_at.mp hf with ⟨f', ⟨s, hs, hxs⟩, hf'⟩,
+  have minor₁ : ∀ (x : E), x ∈ s → differentiable_at ℝ f x := λ x hx, ⟨f' x, hxs x hx⟩,
+  have minor₂ : set.eq_on (fderiv ℝ f) f' s,
+  { intros x hxmem,
+    have := (hf.differentiable_at triv₂).has_fderiv_at,
+    exact (minor₁ x hxmem).has_fderiv_at.unique (hxs x hxmem) },
+  exact hf'.congr_of_eventually_eq (filter.eventually_eq_of_mem hs minor₂)
+end
 
--- lemma D23 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y) :
---   differentiable_at ℝ (fderiv ℝ f) y :=
--- (D22 hf).differentiable_at (with_top.coe_le_coe.mpr $ nat.succ_le_of_lt hn)
+lemma D23 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y) :
+  differentiable_at ℝ (fderiv ℝ f) y :=
+(D22 hf).differentiable_at (with_top.coe_le_coe.mpr $ nat.succ_le_of_lt hn)
 
--- lemma DD2 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y) (u : E) :
---   differentiable_at ℝ (λ x, fderiv ℝ f x u) y :=
--- (apply ℝ F u).differentiable_at.comp _ (D23 hn hf)
+lemma DD2 {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y) (u : E) :
+  differentiable_at ℝ (λ x, fderiv ℝ f x u) y :=
+(apply ℝ F u).differentiable_at.comp _ (D23 hn hf)
 
--- lemma third_order_symmetric {x u v w : E} (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') :
---   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v = fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
--- begin
---   have minor₁ : ∀ᶠ x' in 𝓝 x, has_fderiv_at ((apply ℝ _ u) ∘ (fderiv ℝ f)) 
---     ((apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') x' :=
---     hf'.mono (λ y hy, (apply ℝ F u).has_fderiv_at.comp _ (D23 zero_lt_two hy).has_fderiv_at),
---   have minor₂ : (λ x', (apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') =ᶠ[𝓝 x] λ x',
---     (((apply ℝ (E →L[ℝ] F)) u) ∘ fderiv ℝ (fderiv ℝ f)) x' :=
---   hf'.mono (λ y hy, begin
---     ext1,
---     simp only [coe_comp', function.comp_app, apply_apply],
---     rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_two hy).has_fderiv_at
---   end),
---   have key := (apply ℝ (E →L[ℝ] F) u).has_fderiv_at.comp _
---     (D23 zero_lt_one $ D22 hf'.self_of_nhds).has_fderiv_at,
---   have := second_derivative_symmetric_of_eventually minor₁ (key.congr_of_eventually_eq minor₂) v w,
---   simp only [coe_comp', function.comp_app, apply_apply] at this,
---   rw this
--- end
+lemma third_order_symmetric {x u v w : E} (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') :
+  fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v = fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
+begin
+  have minor₁ : ∀ᶠ x' in 𝓝 x, has_fderiv_at ((apply ℝ _ u) ∘ (fderiv ℝ f)) 
+    ((apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') x' :=
+    hf'.mono (λ y hy, (apply ℝ F u).has_fderiv_at.comp _ (D23 zero_lt_two hy).has_fderiv_at),
+  have minor₂ : (λ x', (apply ℝ _ u).comp $ fderiv ℝ (fderiv ℝ f) x') =ᶠ[𝓝 x] λ x',
+    (((apply ℝ (E →L[ℝ] F)) u) ∘ fderiv ℝ (fderiv ℝ f)) x' :=
+  hf'.mono (λ y hy, begin
+    ext1,
+    simp only [coe_comp', function.comp_app, apply_apply],
+    rw second_derivative_symmetric_of_eventually (D21 hy) (D23 zero_lt_two hy).has_fderiv_at
+  end),
+  have key := (apply ℝ (E →L[ℝ] F) u).has_fderiv_at.comp _
+    (D23 zero_lt_one $ D22 hf'.self_of_nhds).has_fderiv_at,
+  have := second_derivative_symmetric_of_eventually minor₁ (key.congr_of_eventually_eq minor₂) v w,
+  simp only [coe_comp', function.comp_app, apply_apply] at this,
+  rw this
+end
 
--- end diff_prep
+end diff_prep
 
--- section tot_diff_eq
--- open submodule
+section tot_diff_eq
+open submodule
 
--- variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
 
--- lemma D' (u v w : E) {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y)  :
---   fderiv ℝ (λ x, ⟪fderiv ℝ f x u, fderiv ℝ f x v⟫) y w = 
---   ⟪fderiv ℝ (fderiv ℝ f) y u w, fderiv ℝ f y v⟫ + 
---   ⟪fderiv ℝ f y u, fderiv ℝ (fderiv ℝ f) y v w⟫ :=
--- begin
---   rw [fderiv_inner_apply (DD2 hn hf _) (DD2 hn hf _)],
---   simp only [congr_arg, DD1 (D21 hf) (D23 hn hf), congr_arg, add_comm]
--- end
+lemma D' (u v w : E) {y : E} {n : ℕ} (hn : 0 < n) (hf : times_cont_diff_at ℝ (n + 1) f y)  :
+  fderiv ℝ (λ x, ⟪fderiv ℝ f x u, fderiv ℝ f x v⟫) y w = 
+  ⟪fderiv ℝ (fderiv ℝ f) y u w, fderiv ℝ f y v⟫ + 
+  ⟪fderiv ℝ f y u, fderiv ℝ (fderiv ℝ f) y v w⟫ :=
+begin
+  rw [fderiv_inner_apply (DD2 hn hf _) (DD2 hn hf _)],
+  simp only [congr_arg, DD1 (D21 hf) (D23 hn hf), congr_arg, add_comm]
+end
 
--- variables {x : E} (hf : ∀ᶠ x' in 𝓝 x, conformal_at f x') {f' : E → (E →L[ℝ] F)} 
---   (Hf : ∀ (x' : E), is_conformal_map $ f' x') (Heven : fderiv ℝ f =ᶠ[𝓝 x] f')
+variables {x : E} (hf : ∀ᶠ x' in 𝓝 x, conformal_at f x') {f' : E → (E →L[ℝ] F)} 
+  (Hf : ∀ (x' : E), is_conformal_map $ f' x') (Heven : fderiv ℝ f =ᶠ[𝓝 x] f')
 
--- localized "notation `conf_diff` := eventually_is_conformal_map_of_eventually_conformal hf"
---   in liouville_do_not_use
--- localized "notation `conf_diff'` := 
---   (eventually_is_conformal_map_of_eventually_conformal hf).self_of_nhds" 
---   in liouville_do_not_use
+localized "notation `conf_diff` := eventually_is_conformal_map_of_eventually_conformal hf"
+  in liouville_do_not_use
+localized "notation `conf_diff'` := 
+  (eventually_is_conformal_map_of_eventually_conformal hf).self_of_nhds" 
+  in liouville_do_not_use
 
--- include hf
+include hf
 
--- lemma D (hf' : times_cont_diff_at ℝ 2 f x) {u v w : E} 
---   (huv : ⟪u, v⟫ = 0) (hwu : ⟪w, u⟫ = 0) (hwv : ⟪w, v⟫ = 0) :
---   ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x w⟫ = 0 :=
--- begin
---   rw real_inner_comm at hwv,
---   have m₁ := D' u v w zero_lt_one hf',
---   have m₂ := D' v w u zero_lt_one hf',
---   have m₃ := D' w u v zero_lt_one hf',
---   rw [(A' huv conf_diff).fderiv_eq] at m₁,
---   rw [(A' hwv conf_diff).fderiv_eq] at m₂,
---   rw [(A' hwu conf_diff).fderiv_eq] at m₃,
---   rw [fderiv_const, pi.zero_apply, continuous_linear_map.zero_apply] at m₁ m₂ m₃,
---   rw add_comm at m₁ m₃,
---   nth_rewrite 0 real_inner_comm at m₃ m₁,
---   nth_rewrite 1 real_inner_comm at m₁,
---   rw [second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at v u,
---       second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at w u] 
---       at m₂,
---   rw [second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at w v] 
---       at m₃,
---   have triv₂ : ∀ {a b c : ℝ}, a + b = 0 → b + c = 0 → a + c = 0 → a = 0 :=
---   λ a b c hab hbc hac, begin
---     rw [← hab, ← zero_add (a + b), ← hac, ← add_assoc, ← zero_add (b + c)] at hbc,
---     nth_rewrite 3 add_comm at hbc,
---     rw [add_assoc, add_assoc] at hbc,
---     nth_rewrite 1 ← add_assoc at hbc,
---     nth_rewrite 4 add_comm at hbc,
---     exact (add_self_eq_zero.mp $ add_right_cancel hbc.symm)
---   end,
---   exact triv₂ m₃.symm m₁.symm m₂.symm
--- end
+lemma D (hf' : times_cont_diff_at ℝ 2 f x) {u v w : E} 
+  (huv : ⟪u, v⟫ = 0) (hwu : ⟪w, u⟫ = 0) (hwv : ⟪w, v⟫ = 0) :
+  ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x w⟫ = 0 :=
+begin
+  rw real_inner_comm at hwv,
+  have m₁ := D' u v w zero_lt_one hf',
+  have m₂ := D' v w u zero_lt_one hf',
+  have m₃ := D' w u v zero_lt_one hf',
+  rw [(A' huv conf_diff).fderiv_eq] at m₁,
+  rw [(A' hwv conf_diff).fderiv_eq] at m₂,
+  rw [(A' hwu conf_diff).fderiv_eq] at m₃,
+  rw [fderiv_const, pi.zero_apply, continuous_linear_map.zero_apply] at m₁ m₂ m₃,
+  rw add_comm at m₁ m₃,
+  nth_rewrite 0 real_inner_comm at m₃ m₁,
+  nth_rewrite 1 real_inner_comm at m₁,
+  rw [second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at v u,
+      second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at w u] 
+      at m₂,
+  rw [second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at w v] 
+      at m₃,
+  have triv₂ : ∀ {a b c : ℝ}, a + b = 0 → b + c = 0 → a + c = 0 → a = 0 :=
+  λ a b c hab hbc hac, begin
+    rw [← hab, ← zero_add (a + b), ← hac, ← add_assoc, ← zero_add (b + c)] at hbc,
+    nth_rewrite 3 add_comm at hbc,
+    rw [add_assoc, add_assoc] at hbc,
+    nth_rewrite 1 ← add_assoc at hbc,
+    nth_rewrite 4 add_comm at hbc,
+    exact (add_self_eq_zero.mp $ add_right_cancel hbc.symm)
+  end,
+  exact triv₂ m₃.symm m₁.symm m₂.symm
+end
 
--- lemma G'' (hf' : times_cont_diff_at ℝ 2 f x)
---   (h : function.surjective (fderiv ℝ f x)) {u v : E} (huv : ⟪u, v⟫ = 0) :
---   fderiv ℝ (fderiv ℝ f) x u v ∈ span ℝ ({fderiv ℝ f x u} ∪ {fderiv ℝ f x v} : set F) := 
--- begin
---   refine C h conf_diff' (λ t ht, _),
---   rw mem_orthogonal at ht,
---   have triv₁ : u ∈ span ℝ ({u} ∪ {v} : set E) := subset_span (or.intro_left _ $ mem_singleton _),
---   have triv₂ : v ∈ span ℝ ({u} ∪ {v} : set E) := subset_span (or.intro_right _ $ mem_singleton _),
---   have minor₁ := ht u triv₁,
---   have minor₂ := ht v triv₂,
---   rw real_inner_comm at minor₁ minor₂,
---   exact D hf hf' huv minor₁ minor₂
--- end
+lemma G'' (hf' : times_cont_diff_at ℝ 2 f x)
+  (h : function.surjective (fderiv ℝ f x)) {u v : E} (huv : ⟪u, v⟫ = 0) :
+  fderiv ℝ (fderiv ℝ f) x u v ∈ span ℝ ({fderiv ℝ f x u} ∪ {fderiv ℝ f x v} : set F) := 
+begin
+  refine C h conf_diff' (λ t ht, _),
+  rw mem_orthogonal at ht,
+  have triv₁ : u ∈ span ℝ ({u} ∪ {v} : set E) := subset_span (or.intro_left _ $ mem_singleton _),
+  have triv₂ : v ∈ span ℝ ({u} ∪ {v} : set E) := subset_span (or.intro_right _ $ mem_singleton _),
+  have minor₁ := ht u triv₁,
+  have minor₂ := ht v triv₂,
+  rw real_inner_comm at minor₁ minor₂,
+  exact D hf hf' huv minor₁ minor₂
+end
 
--- lemma G' (hf' : times_cont_diff_at ℝ 2 f x) 
---   (h : function.surjective (fderiv ℝ f x)) {u v : E} (huv : ⟪u, v⟫ = 0) : 
---   fderiv ℝ (fderiv ℝ f) x u v = 
---   (⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ / ↑∥fderiv ℝ f x u∥ ^ 2) • fderiv ℝ f x u +
---   (⟪fderiv ℝ f x v, fderiv ℝ (fderiv ℝ f) x u v⟫ / ↑∥fderiv ℝ f x v∥ ^ 2) • fderiv ℝ f x v :=
--- begin
---   rw [← orthogonal_projection_singleton, ← orthogonal_projection_singleton],
---   have := G'' hf hf' h huv,
---   rw [span_union, mem_sup] at this,
---   rcases this with ⟨p₁, hp₁, p₂, hp₂, hp₁p₂⟩,
---   have triv₁ : fderiv ℝ (fderiv ℝ f) x u v - p₂ = p₁ := 
---     by rw [← hp₁p₂, ← add_sub, sub_self, add_zero],
---   have triv₂ : fderiv ℝ (fderiv ℝ f) x u v - p₁ = p₂ := 
---     by { rw [← hp₁p₂, add_comm], rw [← add_sub, sub_self, add_zero] },
---   rcases mem_span_singleton.mp hp₁ with ⟨s₁, hs₁⟩,
---   rcases mem_span_singleton.mp hp₂ with ⟨s₂, hs₂⟩,
---   have key₁ : ∀ (w : F), w ∈  span ℝ ({fderiv ℝ f x u} : set F) →
---     ⟪fderiv ℝ (fderiv ℝ f) x u v - p₁, w⟫ = 0 :=
---   λ w hw, begin
---     rcases mem_span_singleton.mp hw with ⟨s', hs'⟩,
---     rw [← hs', triv₂, ← hs₂, real_inner_smul_left, real_inner_smul_right],
---     rw [real_inner_comm, A conf_diff'] at huv,
---     rw [huv, mul_zero, mul_zero]
---   end,
---   have key₂ : ∀ (w : F), w ∈  span ℝ ({fderiv ℝ f x v} : set F) →
---     ⟪fderiv ℝ (fderiv ℝ f) x u v - p₂, w⟫ = 0 :=
---   λ w hw, begin
---     rcases mem_span_singleton.mp hw with ⟨s', hs'⟩,
---     rw [← hs', triv₁, ← hs₁, real_inner_smul_left, real_inner_smul_right],
---     rw [A conf_diff'] at huv,
---     rw [huv, mul_zero, mul_zero]
---   end,
---   rw [eq_orthogonal_projection_of_mem_of_inner_eq_zero hp₁ key₁, 
---       eq_orthogonal_projection_of_mem_of_inner_eq_zero hp₂ key₂],
---   exact hp₁p₂.symm
--- end
+lemma G' (hf' : times_cont_diff_at ℝ 2 f x) 
+  (h : function.surjective (fderiv ℝ f x)) {u v : E} (huv : ⟪u, v⟫ = 0) : 
+  fderiv ℝ (fderiv ℝ f) x u v = 
+  (⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ / ↑∥fderiv ℝ f x u∥ ^ 2) • fderiv ℝ f x u +
+  (⟪fderiv ℝ f x v, fderiv ℝ (fderiv ℝ f) x u v⟫ / ↑∥fderiv ℝ f x v∥ ^ 2) • fderiv ℝ f x v :=
+begin
+  rw [← orthogonal_projection_singleton, ← orthogonal_projection_singleton],
+  have := G'' hf hf' h huv,
+  rw [span_union, mem_sup] at this,
+  rcases this with ⟨p₁, hp₁, p₂, hp₂, hp₁p₂⟩,
+  have triv₁ : fderiv ℝ (fderiv ℝ f) x u v - p₂ = p₁ := 
+    by rw [← hp₁p₂, ← add_sub, sub_self, add_zero],
+  have triv₂ : fderiv ℝ (fderiv ℝ f) x u v - p₁ = p₂ := 
+    by { rw [← hp₁p₂, add_comm], rw [← add_sub, sub_self, add_zero] },
+  rcases mem_span_singleton.mp hp₁ with ⟨s₁, hs₁⟩,
+  rcases mem_span_singleton.mp hp₂ with ⟨s₂, hs₂⟩,
+  have key₁ : ∀ (w : F), w ∈  span ℝ ({fderiv ℝ f x u} : set F) →
+    ⟪fderiv ℝ (fderiv ℝ f) x u v - p₁, w⟫ = 0 :=
+  λ w hw, begin
+    rcases mem_span_singleton.mp hw with ⟨s', hs'⟩,
+    rw [← hs', triv₂, ← hs₂, real_inner_smul_left, real_inner_smul_right],
+    rw [real_inner_comm, A conf_diff'] at huv,
+    rw [huv, mul_zero, mul_zero]
+  end,
+  have key₂ : ∀ (w : F), w ∈  span ℝ ({fderiv ℝ f x v} : set F) →
+    ⟪fderiv ℝ (fderiv ℝ f) x u v - p₂, w⟫ = 0 :=
+  λ w hw, begin
+    rcases mem_span_singleton.mp hw with ⟨s', hs'⟩,
+    rw [← hs', triv₁, ← hs₁, real_inner_smul_left, real_inner_smul_right],
+    rw [A conf_diff'] at huv,
+    rw [huv, mul_zero, mul_zero]
+  end,
+  rw [eq_orthogonal_projection_of_mem_of_inner_eq_zero hp₁ key₁, 
+      eq_orthogonal_projection_of_mem_of_inner_eq_zero hp₂ key₂],
+  exact hp₁p₂.symm
+end
 
--- localized "notation `psuedo_conf` := λ y, @filter.eventually_of_forall _ _ (𝓝 y) (λ x', Hf x')"
---   in liouville_do_not_use
+localized "notation `psuedo_conf` := λ y, @filter.eventually_of_forall _ _ (𝓝 y) (λ x', Hf x')"
+  in liouville_do_not_use
 
--- include Hf Heven
+include Hf Heven
 
--- lemma G [nontrivial E] (hf' : times_cont_diff_at ℝ 2 f x) (u v : E)  : 
---   ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x u⟫ + 
---   ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ =
---   2 * ((similarity_factor_sqrt conf_diff) * 
---   (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x v) * ⟪u, u⟫) :=
--- begin
---   rcases filter.eventually_eq_iff_exists_mem.mp Heven with ⟨s, hs, heq⟩,
---   rw ← D' u u v zero_lt_one hf',
---   have : (λ (y : E), ⟪fderiv ℝ f y u, fderiv ℝ f y u⟫) =ᶠ[𝓝 x] 
---     (λ y, ⟪u, u⟫ * id y) ∘ (λ y, similarity_factor $ psuedo_conf y),
---   { rw filter.eventually_eq_iff_exists_mem,
---     refine ⟨s, hs, _⟩,
---     intros z hz,
---     simp only [function.comp_app, congr_arg],
---     rw [mul_comm, heq hz],
---     exact (similarity_factor_prop $ psuedo_conf z).2 u u },
---   have minor₁ := (D22 hf').congr_of_eventually_eq Heven.symm,
---   have minor₂ := (similarity_factor_times_cont_diff_at x psuedo_conf minor₁).differentiable_at 
---     (le_of_eq rfl),
---   have minor₃ := (similarity_factor_sqrt_times_cont_diff_at x psuedo_conf minor₁).differentiable_at 
---     (le_of_eq rfl),
---   rw [this.fderiv_eq, fderiv.comp _ (differentiable_at_id.const_mul _) minor₂, 
---       fderiv_const_mul differentiable_at_id ⟪u, u⟫, fderiv_id],
---   rw ← similarity_factor_sqrt_eq psuedo_conf,
---   simp only [pow_two], 
---   rw [fderiv_mul minor₃ minor₃, coe_comp'],
---   simp only [function.comp_app, coe_add', pi.add_apply, 
---              continuous_linear_map.smul_apply, smul_eq_mul, coe_id'],
---   simp only [_root_.id],
---   rw similarity_factor_sqrt_eq_of_eventually_eq conf_diff Heven,
---   ring
--- end
+lemma G [nontrivial E] (hf' : times_cont_diff_at ℝ 2 f x) (u v : E)  : 
+  ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x u⟫ + 
+  ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ =
+  2 * ((similarity_factor_sqrt conf_diff) * 
+  (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x v) * ⟪u, u⟫) :=
+begin
+  rcases filter.eventually_eq_iff_exists_mem.mp Heven with ⟨s, hs, heq⟩,
+  rw ← D' u u v zero_lt_one hf',
+  have : (λ (y : E), ⟪fderiv ℝ f y u, fderiv ℝ f y u⟫) =ᶠ[𝓝 x] 
+    (λ y, ⟪u, u⟫ * id y) ∘ (λ y, similarity_factor $ psuedo_conf y),
+  { rw filter.eventually_eq_iff_exists_mem,
+    refine ⟨s, hs, _⟩,
+    intros z hz,
+    simp only [function.comp_app, congr_arg],
+    rw [mul_comm, heq hz],
+    exact (similarity_factor_prop $ psuedo_conf z).2 u u },
+  have minor₁ := (D22 hf').congr_of_eventually_eq Heven.symm,
+  have minor₂ := (similarity_factor_times_cont_diff_at x psuedo_conf minor₁).differentiable_at 
+    (le_of_eq rfl),
+  have minor₃ := (similarity_factor_sqrt_times_cont_diff_at x psuedo_conf minor₁).differentiable_at 
+    (le_of_eq rfl),
+  rw [this.fderiv_eq, fderiv.comp _ (differentiable_at_id.const_mul _) minor₂, 
+      fderiv_const_mul differentiable_at_id ⟪u, u⟫, fderiv_id],
+  rw ← similarity_factor_sqrt_eq psuedo_conf,
+  simp only [pow_two], 
+  rw [fderiv_mul minor₃ minor₃, coe_comp'],
+  simp only [function.comp_app, coe_add', pi.add_apply, 
+             continuous_linear_map.smul_apply, smul_eq_mul, coe_id'],
+  simp only [_root_.id],
+  rw similarity_factor_sqrt_eq_of_eventually_eq conf_diff Heven,
+  ring
+end
 
--- lemma GG' {u v : E} (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) : 
---   ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x u⟫ / ⟪u, u⟫ = 
---   similarity_factor_sqrt conf_diff * (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x v) :=
--- begin
---   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
---   have key := G hf Hf Heven hf' u v,
---   rw [real_inner_comm, ← two_mul, real_inner_comm] at key,
---   have triv : ⟪u, u⟫ ≠ 0 := λ W, hu (inner_self_eq_zero.mp W),
---   rw div_eq_iff_mul_eq triv,
---   convert (mul_left_cancel' _ key).symm,
---   exact two_ne_zero  
--- end
+lemma GG' {u v : E} (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) : 
+  ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x u⟫ / ⟪u, u⟫ = 
+  similarity_factor_sqrt conf_diff * (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x v) :=
+begin
+  haveI : nontrivial E := nontrivial_of_ne u 0 hu,
+  have key := G hf Hf Heven hf' u v,
+  rw [real_inner_comm, ← two_mul, real_inner_comm] at key,
+  have triv : ⟪u, u⟫ ≠ 0 := λ W, hu (inner_self_eq_zero.mp W),
+  rw div_eq_iff_mul_eq triv,
+  convert (mul_left_cancel' _ key).symm,
+  exact two_ne_zero  
+end
 
--- lemma GG1 {u v : E} (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) : 
---   ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x u∥ ^ 2 =
---   (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x v) *
---   similarity_factor_sqrt_inv conf_diff :=
--- begin
---   rw [pow_two, ← real_inner_self_eq_norm_sq],
---   have triv₁ : ⟪u, u⟫ ≠ 0 := λ W, hu (inner_self_eq_zero.mp W),
---   rw [← div_mul_div_cancel _ triv₁,
---       (similarity_factor_sqrt_inv_prop conf_diff).2,
---       real_inner_comm, GG' hf Hf Heven hu hf'],
---   simp only [similarity_factor_sqrt_inv, inv_inv', congr_arg],
---   field_simp [triv₁, (similarity_factor_sqrt_prop conf_diff).1],
---   ring
--- end
+lemma GG1 {u v : E} (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) : 
+  ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x u∥ ^ 2 =
+  (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x v) *
+  similarity_factor_sqrt_inv conf_diff :=
+begin
+  rw [pow_two, ← real_inner_self_eq_norm_sq],
+  have triv₁ : ⟪u, u⟫ ≠ 0 := λ W, hu (inner_self_eq_zero.mp W),
+  rw [← div_mul_div_cancel _ triv₁,
+      (similarity_factor_sqrt_inv_prop conf_diff).2,
+      real_inner_comm, GG' hf Hf Heven hu hf'],
+  simp only [similarity_factor_sqrt_inv, inv_inv', congr_arg],
+  field_simp [triv₁, (similarity_factor_sqrt_prop conf_diff).1],
+  ring
+end
 
--- lemma GG2 {u v : E} (hv : v ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) :
---   ⟪fderiv ℝ f x v, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x v∥ ^ 2 =
---   (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x u) *
---   similarity_factor_sqrt_inv (conf_diff) :=
--- begin
---   rw second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at u v,
---   exact GG1 hf Hf Heven hv hf'
--- end
+lemma GG2 {u v : E} (hv : v ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) :
+  ⟪fderiv ℝ f x v, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x v∥ ^ 2 =
+  (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x u) *
+  similarity_factor_sqrt_inv (conf_diff) :=
+begin
+  rw second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at u v,
+  exact GG1 hf Hf Heven hv hf'
+end
 
--- open filter
--- open_locale filter
+open filter
+open_locale filter
 
--- lemma GGG_eventually_eq {u v : E} {s : set E} (hxs : x ∈ s) 
---   (hs : is_open s) (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
---   (hf' : ∀ y ∈ s, times_cont_diff_at ℝ 2 f y) (h : ∀ y ∈ s, function.surjective (fderiv ℝ f y)) : 
---   (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • (fderiv ℝ (fderiv ℝ f) x' u v) +
---   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v) • fderiv ℝ f x' u + 
---   (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' u) • fderiv ℝ f x' v) =ᶠ[𝓝 x] 
---   λ x', (0 : F) :=
--- begin
---   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
---   rcases eventually_iff_exists_mem.mp hf with ⟨s₁, hs₁, hy₁⟩,
---   rcases eventually_eq_iff_exists_mem.mp Heven with ⟨s₂, hs₂, hy₂⟩,
---   have triv₁ : (s₁ ∩ s₂) ∩ s ∈ 𝓝 x := inter_mem (inter_mem hs₁ hs₂) 
---     (hs.mem_nhds hxs),
---   rcases mem_nhds_iff.mp triv₁ with ⟨t, ht, hxt₁, hxt₂⟩,
---   refine eventually_eq_of_mem (hxt₁.mem_nhds hxt₂) (λ y hy, _),
---   have minor₁ : ∀ᶠ x' in 𝓝 y, conformal_at f x' :=
---     eventually_iff_exists_mem.mpr ⟨t, hxt₁.mem_nhds hy, λ y' hy', hy₁ y' (ht hy').1.1⟩,
---   have minor₂ : fderiv ℝ f =ᶠ[𝓝 y] f' :=
---     eventually_iff_exists_mem.mpr ⟨t, hxt₁.mem_nhds hy, λ y' hy', hy₂ (ht hy').1.2⟩,
---   simp only [congr_arg],
---   have key₁ := (hf' y (ht hy).2),
---   have key₂ := h y (ht hy).2,
---   have minor₃ := (D22 key₁).congr_of_eventually_eq minor₂.symm,
---   have key := similarity_factor_sqrt_inv_fderiv y psuedo_conf zero_lt_one minor₃,
---   rw [G' minor₁ key₁ key₂ huv, key],
---   simp only [is_R_or_C.coe_real_eq_id, _root_.id],
---   rw [GG1 minor₁ Hf minor₂ hu key₁, GG2 minor₁ Hf minor₂ hv key₁],
---   simp only [smul_add, smul_smul, pi.neg_apply, pi.mul_apply, congr_arg],
---   rw [← similarity_factor_sqrt_inv_eq', inv_pow', inv_inv', pow_two],
---   rw similarity_factor_sqrt_inv_eq_of_eventually_eq (psuedo_conf y) minor₂.symm,
---   nth_rewrite 1 add_comm,
---   simp only [← add_assoc, ← add_smul, add_assoc, ← add_smul],
---   rw [neg_mul_eq_neg_mul_symm, neg_add_eq_sub],
---   simp only [mul_assoc, mul_comm, sub_self, zero_smul],
---   simp
--- end
+lemma GGG_eventually_eq {u v : E} {s : set E} (hxs : x ∈ s) 
+  (hs : is_open s) (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
+  (hf' : ∀ y ∈ s, times_cont_diff_at ℝ 2 f y) (h : ∀ y ∈ s, function.surjective (fderiv ℝ f y)) : 
+  (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • (fderiv ℝ (fderiv ℝ f) x' u v) +
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v) • fderiv ℝ f x' u + 
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' u) • fderiv ℝ f x' v) =ᶠ[𝓝 x] 
+  λ x', (0 : F) :=
+begin
+  haveI : nontrivial E := nontrivial_of_ne u 0 hu,
+  rcases eventually_iff_exists_mem.mp hf with ⟨s₁, hs₁, hy₁⟩,
+  rcases eventually_eq_iff_exists_mem.mp Heven with ⟨s₂, hs₂, hy₂⟩,
+  have triv₁ : (s₁ ∩ s₂) ∩ s ∈ 𝓝 x := inter_mem (inter_mem hs₁ hs₂) 
+    (hs.mem_nhds hxs),
+  rcases mem_nhds_iff.mp triv₁ with ⟨t, ht, hxt₁, hxt₂⟩,
+  refine eventually_eq_of_mem (hxt₁.mem_nhds hxt₂) (λ y hy, _),
+  have minor₁ : ∀ᶠ x' in 𝓝 y, conformal_at f x' :=
+    eventually_iff_exists_mem.mpr ⟨t, hxt₁.mem_nhds hy, λ y' hy', hy₁ y' (ht hy').1.1⟩,
+  have minor₂ : fderiv ℝ f =ᶠ[𝓝 y] f' :=
+    eventually_iff_exists_mem.mpr ⟨t, hxt₁.mem_nhds hy, λ y' hy', hy₂ (ht hy').1.2⟩,
+  simp only [congr_arg],
+  have key₁ := (hf' y (ht hy).2),
+  have key₂ := h y (ht hy).2,
+  have minor₃ := (D22 key₁).congr_of_eventually_eq minor₂.symm,
+  have key := similarity_factor_sqrt_inv_fderiv y psuedo_conf zero_lt_one minor₃,
+  rw [G' minor₁ key₁ key₂ huv, key],
+  simp only [is_R_or_C.coe_real_eq_id, _root_.id],
+  rw [GG1 minor₁ Hf minor₂ hu key₁, GG2 minor₁ Hf minor₂ hv key₁],
+  simp only [smul_add, smul_smul, pi.neg_apply, pi.mul_apply, congr_arg],
+  rw [← similarity_factor_sqrt_inv_eq', inv_pow', inv_inv', pow_two],
+  rw similarity_factor_sqrt_inv_eq_of_eventually_eq (psuedo_conf y) minor₂.symm,
+  nth_rewrite 1 add_comm,
+  simp only [← add_assoc, ← add_smul, add_assoc, ← add_smul],
+  rw [neg_mul_eq_neg_mul_symm, neg_add_eq_sub],
+  simp only [mul_assoc, mul_comm, sub_self, zero_smul],
+  simp
+end
 
--- lemma J1 {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') :
---   fderiv ℝ (λ x, (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v) • 
---   fderiv ℝ f x u) x w = fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ 
---   psuedo_conf y) x w v • fderiv ℝ f x u +  
---   fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v • fderiv ℝ (fderiv ℝ f) x w u :=
--- begin
---   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
---   have minor₀ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
---     ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
---   have minor₁ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
---   have minor₂ := D23 zero_lt_two hf'.self_of_nhds,
---   have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := hf'.mono (λ a ha, D22 ha),
---   have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
---     (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
---     D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
---     minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
---   have minor₅ := D23 zero_lt_one minor₀,
---   rw fderiv_smul,
---   simp only [continuous_linear_map.add_apply, continuous_linear_map.smul_apply, 
---              continuous_linear_map.smul_right_apply, congr_arg],
---   rw [DD1 minor₁ minor₂, DD1 minor₄ minor₅], 
---   simp only [congr_arg],
---   rw [second_derivative_symmetric_of_eventually minor₁ minor₂.has_fderiv_at,
---       second_derivative_symmetric_of_eventually minor₄ minor₅.has_fderiv_at, add_comm],
---   exact DD2 zero_lt_one (similarity_factor_sqrt_inv_times_cont_diff_at _ 
---     psuedo_conf $ minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm) v,
---   exact DD2 zero_lt_two hf'.self_of_nhds u
--- end
+lemma J1 {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') :
+  fderiv ℝ (λ x, (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v) • 
+  fderiv ℝ f x u) x w = fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ 
+  psuedo_conf y) x w v • fderiv ℝ f x u +  
+  fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v • fderiv ℝ (fderiv ℝ f) x w u :=
+begin
+  haveI : nontrivial E := nontrivial_of_ne u 0 hu,
+  have minor₀ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+    ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
+  have minor₁ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
+  have minor₂ := D23 zero_lt_two hf'.self_of_nhds,
+  have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := hf'.mono (λ a ha, D22 ha),
+  have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
+    (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
+    D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+    minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
+  have minor₅ := D23 zero_lt_one minor₀,
+  rw fderiv_smul,
+  simp only [continuous_linear_map.add_apply, continuous_linear_map.smul_apply, 
+             continuous_linear_map.smul_right_apply, congr_arg],
+  rw [DD1 minor₁ minor₂, DD1 minor₄ minor₅], 
+  simp only [congr_arg],
+  rw [second_derivative_symmetric_of_eventually minor₁ minor₂.has_fderiv_at,
+      second_derivative_symmetric_of_eventually minor₄ minor₅.has_fderiv_at, add_comm],
+  exact DD2 zero_lt_one (similarity_factor_sqrt_inv_times_cont_diff_at _ 
+    psuedo_conf $ minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm) v,
+  exact DD2 zero_lt_two hf'.self_of_nhds u
+end
 
--- lemma J2 {u : E} (v w : E) (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 4 f x) :
---   fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
---   = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
---   fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
---   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v :=
--- begin
---   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
---   have := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
---     ((D22 hf').congr_of_eventually_eq Heven.symm),
---   rw fderiv_smul,
---   simp only [add_apply, smul_apply, smul_right_apply, congr_arg],
---   rw [DD1' (D21 $ D22 hf') (D23 zero_lt_two $ D22 hf')],
---   simp only [add_comm, congr_arg],
---   rw similarity_factor_sqrt_inv_eq_of_eventually_eq _ Heven,
---   exact this.differentiable_at (with_top.coe_le_coe.mpr $ nat.succ_le_succ zero_le_two),
---   exact (apply ℝ F v).differentiable_at.comp _ 
---     ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'),
--- end
+lemma J2 {u : E} (v w : E) (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 4 f x) :
+  fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
+  = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
+  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
+  fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v :=
+begin
+  haveI : nontrivial E := nontrivial_of_ne u 0 hu,
+  have := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+    ((D22 hf').congr_of_eventually_eq Heven.symm),
+  rw fderiv_smul,
+  simp only [add_apply, smul_apply, smul_right_apply, congr_arg],
+  rw [DD1' (D21 $ D22 hf') (D23 zero_lt_two $ D22 hf')],
+  simp only [add_comm, congr_arg],
+  rw similarity_factor_sqrt_inv_eq_of_eventually_eq _ Heven,
+  exact this.differentiable_at (with_top.coe_le_coe.mpr $ nat.succ_le_succ zero_le_two),
+  exact (apply ℝ F v).differentiable_at.comp _ 
+    ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'),
+end
 
--- lemma J2' {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
---   fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
---   = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
---   fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
---   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
--- by rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, 
---        third_order_symmetric (hf'.mono $ λ a ha, ha.of_le $ 
---        by { apply with_top.coe_le_coe.mpr, norm_num })]
+lemma J2' {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
+  fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ psuedo_conf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
+  = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ psuedo_conf x') x w • 
+  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff •
+  fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
+by rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, 
+       third_order_symmetric (hf'.mono $ λ a ha, ha.of_le $ 
+       by { apply with_top.coe_le_coe.mpr, norm_num })]
 
--- lemma tot1 {u v w : E}
---   (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0) (hwv : ⟪w, v⟫ = 0)
---   (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
---   (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
---   fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u = 0 :=
--- begin
---   by_cases hv : v ≠ 0; by_cases hu : u ≠ 0,
---   { have triv₁ : (2 : with_top ℕ) ≤ 4,
---     { apply with_top.coe_le_coe.mpr,
---       norm_num },
---     have triv₂ : (3 : with_top ℕ) ≤ 4,
---     { apply with_top.coe_le_coe.mpr,
---       norm_num },
---     have triv₃ : (1 : with_top ℕ) ≤ 3,
---     { apply with_top.coe_le_coe.mpr,
---       norm_num },
---     haveI : nontrivial E := nontrivial_of_ne u 0 hu,
---     have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
---       ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
---     have minor₂ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
---     have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
---       hf'.mono (λ a ha, D22 $ ha.of_le triv₂),
---     have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
---       (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
---       D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
---       minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
---     rcases eventually_iff_exists_mem.mp hf' with ⟨s₁, hs₁, hy₁⟩,
---     rcases eventually_iff_exists_mem.mp h with ⟨s₂, hs₂, hy₂⟩,
---     rcases mem_nhds_iff.mp (inter_mem hs₁ hs₂) with ⟨t, ht, Ht₁, Ht₂⟩,
---     have m₁ : fderiv ℝ _ _ w = (0 : F),
---     { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hv huv 
---       (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
---       simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
---     have m₂ : fderiv ℝ _ _ v = (0 : F),
---     { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hw huw
---       (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
---       simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
---     rw ← m₂ at m₁,
---     have diff₁ := (apply ℝ ℝ u).differentiable_at.comp _ (D23 zero_lt_two minor₁),
---     have diff₁' := (apply ℝ ℝ v).differentiable_at.comp _ (D23 zero_lt_two minor₁),
---     have diff₁'' := (apply ℝ ℝ w).differentiable_at.comp _ (D23 zero_lt_two minor₁),
---     have diff₂ := (apply ℝ F v).differentiable_at.comp _ 
---       ((D22 hf'.self_of_nhds).differentiable_at triv₃),
---     have diff₂' := (apply ℝ F u).differentiable_at.comp _ 
---       ((D22 hf'.self_of_nhds).differentiable_at triv₃),
---     have diff₂'' := (apply ℝ F w).differentiable_at.comp _ 
---       ((D22 hf'.self_of_nhds).differentiable_at triv₃),
---     have diff₃ := (apply ℝ F v).differentiable_at.comp _ 
---       ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
---     have diff₃' := (apply ℝ F w).differentiable_at.comp _ 
---       ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
---     have diff_mk₁ := diff₁.smul diff₂,
---     have diff_mk₁' := diff₁.smul diff₂'',
---     have diff_mk₂ := diff₁'.smul diff₂',
---     have diff_mk₂' := diff₁''.smul diff₂',
---     have diff_mk₃ := (minor₁.differentiable_at triv₃).smul diff₃,
---     have diff_mk₃' := (minor₁.differentiable_at triv₃).smul diff₃',
---     simp only [congr_arg, function.comp_app, apply_apply] at 
---       diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃',
---     have times₁ := hf'.mono (λ a ha, ha.of_le triv₂), 
---     rw [fderiv_add (diff_mk₃.add diff_mk₂) diff_mk₁, fderiv_add diff_mk₃ diff_mk₂,
---         fderiv_add (diff_mk₃'.add diff_mk₂') diff_mk₁', fderiv_add diff_mk₃' diff_mk₂'] at m₁,
---     simp only [add_apply] at m₁,
---     rw [J1 hf Hf Heven v w hu times₁, J1 hf Hf Heven u w hv times₁,
---         J1 hf Hf Heven w v hu times₁, J1 hf Hf Heven u v hw times₁] at m₁,
---     rw [J2' hf Hf Heven v w hu hf', J2 hf Hf Heven w v hu hf'.self_of_nhds] at m₁,
---     rw [second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
---         (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w u, 
---         second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
---         (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at u v,
---         second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
---         (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w v] at m₁,
---     rw second_derivative_symmetric_of_eventually minor₄ 
---       (D23 zero_lt_two minor₁).has_fderiv_at at m₁,
---     clear minor₁ minor₂ minor₃ minor₄ m₂ diff₁ diff₁' diff₁'' diff₂ diff₂' diff₂'' diff₃ 
---       diff₃' diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃' times₁,
---     -- if I don't make a `quick1` lemma the there will be a time-out failure.
---     have key := quick1 m₁,
---     clear m₁,
---     have triv₄ : ⟪fderiv ℝ f x w, fderiv ℝ f x w⟫ ≠ 0 := 
---       λ W, (hw $ inner_self_eq_zero.mp $ (A conf_diff').mpr W),
---     rw [← mul_div_cancel 
---         (fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u) triv₄],
---     simp only [congr_arg] at key,
---     rw [← real_inner_smul_right, ← key, real_inner_smul_right, 
---         (A conf_diff').mp hwv, mul_zero, zero_div] },
---   { rw not_not.mp hu,
---     simp only [continuous_linear_map.map_zero] },
---   { rw not_not.mp hv,
---     simp only [continuous_linear_map.map_zero, continuous_linear_map.zero_apply] },
---   { rw not_not.mp hu,
---     simp only [continuous_linear_map.map_zero] }
--- end
+lemma tot1 {u v w : E}
+  (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0) (hwv : ⟪w, v⟫ = 0)
+  (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
+  (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
+  fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u = 0 :=
+begin
+  by_cases hv : v ≠ 0; by_cases hu : u ≠ 0,
+  { have triv₁ : (2 : with_top ℕ) ≤ 4,
+    { apply with_top.coe_le_coe.mpr,
+      norm_num },
+    have triv₂ : (3 : with_top ℕ) ≤ 4,
+    { apply with_top.coe_le_coe.mpr,
+      norm_num },
+    have triv₃ : (1 : with_top ℕ) ≤ 3,
+    { apply with_top.coe_le_coe.mpr,
+      norm_num },
+    haveI : nontrivial E := nontrivial_of_ne u 0 hu,
+    have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+      ((D22 hf'.self_of_nhds).congr_of_eventually_eq Heven.symm),
+    have minor₂ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
+    have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
+      hf'.mono (λ a ha, D22 $ ha.of_le triv₂),
+    have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
+      (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
+      D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+      minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
+    rcases eventually_iff_exists_mem.mp hf' with ⟨s₁, hs₁, hy₁⟩,
+    rcases eventually_iff_exists_mem.mp h with ⟨s₂, hs₂, hy₂⟩,
+    rcases mem_nhds_iff.mp (inter_mem hs₁ hs₂) with ⟨t, ht, Ht₁, Ht₂⟩,
+    have m₁ : fderiv ℝ _ _ w = (0 : F),
+    { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hv huv 
+      (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
+      simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
+    have m₂ : fderiv ℝ _ _ v = (0 : F),
+    { rw (GGG_eventually_eq hf Hf Heven Ht₂ Ht₁ hu hw huw
+      (λ y' hy', (hy₁ y' (ht hy').1).of_le triv₁) $ λ y' hy', hy₂ y' (ht hy').2).fderiv_eq,
+      simp only [congr_arg, fderiv_const, pi.zero_apply, zero_apply] },
+    rw ← m₂ at m₁,
+    have diff₁ := (apply ℝ ℝ u).differentiable_at.comp _ (D23 zero_lt_two minor₁),
+    have diff₁' := (apply ℝ ℝ v).differentiable_at.comp _ (D23 zero_lt_two minor₁),
+    have diff₁'' := (apply ℝ ℝ w).differentiable_at.comp _ (D23 zero_lt_two minor₁),
+    have diff₂ := (apply ℝ F v).differentiable_at.comp _ 
+      ((D22 hf'.self_of_nhds).differentiable_at triv₃),
+    have diff₂' := (apply ℝ F u).differentiable_at.comp _ 
+      ((D22 hf'.self_of_nhds).differentiable_at triv₃),
+    have diff₂'' := (apply ℝ F w).differentiable_at.comp _ 
+      ((D22 hf'.self_of_nhds).differentiable_at triv₃),
+    have diff₃ := (apply ℝ F v).differentiable_at.comp _ 
+      ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
+    have diff₃' := (apply ℝ F w).differentiable_at.comp _ 
+      ((apply ℝ (E →L[ℝ] F) u).differentiable_at.comp _ $ D23 zero_lt_two $ D22 hf'.self_of_nhds),
+    have diff_mk₁ := diff₁.smul diff₂,
+    have diff_mk₁' := diff₁.smul diff₂'',
+    have diff_mk₂ := diff₁'.smul diff₂',
+    have diff_mk₂' := diff₁''.smul diff₂',
+    have diff_mk₃ := (minor₁.differentiable_at triv₃).smul diff₃,
+    have diff_mk₃' := (minor₁.differentiable_at triv₃).smul diff₃',
+    simp only [congr_arg, function.comp_app, apply_apply] at 
+      diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃',
+    have times₁ := hf'.mono (λ a ha, ha.of_le triv₂), 
+    rw [fderiv_add (diff_mk₃.add diff_mk₂) diff_mk₁, fderiv_add diff_mk₃ diff_mk₂,
+        fderiv_add (diff_mk₃'.add diff_mk₂') diff_mk₁', fderiv_add diff_mk₃' diff_mk₂'] at m₁,
+    simp only [add_apply] at m₁,
+    rw [J1 hf Hf Heven v w hu times₁, J1 hf Hf Heven u w hv times₁,
+        J1 hf Hf Heven w v hu times₁, J1 hf Hf Heven u v hw times₁] at m₁,
+    rw [J2' hf Hf Heven v w hu hf', J2 hf Hf Heven w v hu hf'.self_of_nhds] at m₁,
+    rw [second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
+        (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w u, 
+        second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
+        (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at u v,
+        second_derivative_symmetric_of_eventually (D21 hf'.self_of_nhds) 
+        (D23 zero_lt_three hf'.self_of_nhds).has_fderiv_at w v] at m₁,
+    rw second_derivative_symmetric_of_eventually minor₄ 
+      (D23 zero_lt_two minor₁).has_fderiv_at at m₁,
+    clear minor₁ minor₂ minor₃ minor₄ m₂ diff₁ diff₁' diff₁'' diff₂ diff₂' diff₂'' diff₃ 
+      diff₃' diff_mk₁ diff_mk₁' diff_mk₂ diff_mk₂' diff_mk₃ diff_mk₃' times₁,
+    -- if I don't make a `quick1` lemma the there will be a time-out failure.
+    have key := quick1 m₁,
+    clear m₁,
+    have triv₄ : ⟪fderiv ℝ f x w, fderiv ℝ f x w⟫ ≠ 0 := 
+      λ W, (hw $ inner_self_eq_zero.mp $ (A conf_diff').mpr W),
+    rw [← mul_div_cancel 
+        (fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u) triv₄],
+    simp only [congr_arg] at key,
+    rw [← real_inner_smul_right, ← key, real_inner_smul_right, 
+        (A conf_diff').mp hwv, mul_zero, zero_div] },
+  { rw not_not.mp hu,
+    simp only [continuous_linear_map.map_zero] },
+  { rw not_not.mp hv,
+    simp only [continuous_linear_map.map_zero, continuous_linear_map.zero_apply] },
+  { rw not_not.mp hu,
+    simp only [continuous_linear_map.map_zero] }
+end
 
--- end tot_diff_eq
+end tot_diff_eq
 
--- section bilin_form_and_local_prop 
--- open continuous_linear_map filter
+section bilin_form_and_local_prop 
+open continuous_linear_map filter
 
--- variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
---   {s : set E} (hs : is_open s) (hfs : ∀ x ∈ s, conformal_at f x) 
---   (hf's : ∀ x ∈ s, times_cont_diff_at ℝ 4 f x) 
---   (hsurj : ∀ x ∈ s , function.surjective (fderiv ℝ f x))
---   {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x')
---   (Hevens : ∀ x ∈ s, fderiv ℝ f x = f' x)
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
+  {s : set E} (hs : is_open s) (hfs : ∀ x ∈ s, conformal_at f x) 
+  (hf's : ∀ x ∈ s, times_cont_diff_at ℝ 4 f x) 
+  (hsurj : ∀ x ∈ s , function.surjective (fderiv ℝ f x))
+  {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x')
+  (Hevens : ∀ x ∈ s, fderiv ℝ f x = f' x)
 
--- localized "notation `psuedo_conf` := λ y, @filter.eventually_of_forall _ _ (𝓝 y) (λ x', Hf x')"
---   in liouville_do_not_use
+localized "notation `psuedo_conf` := λ y, @filter.eventually_of_forall _ _ (𝓝 y) (λ x', Hf x')"
+  in liouville_do_not_use
 
--- def to_sym_bilin_form (x : E) : bilin_form ℝ E :=
--- { bilin := λ u v, fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u,
---   bilin_add_left := λ x y z, by simp only [map_add],
---   bilin_smul_left := λ s x y, by simp only [map_smul, smul_eq_mul],
---   bilin_add_right := λ x y z, by simp only [map_add, add_apply],
---   bilin_smul_right := λ s x y, by simp only [map_smul, smul_apply, smul_eq_mul] }
+def to_sym_bilin_form (x : E) : bilin_form ℝ E :=
+{ bilin := λ u v, fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x v u,
+  bilin_add_left := λ x y z, by simp only [map_add],
+  bilin_smul_left := λ s x y, by simp only [map_smul, smul_eq_mul],
+  bilin_add_right := λ x y z, by simp only [map_add, add_apply],
+  bilin_smul_right := λ s x y, by simp only [map_smul, smul_apply, smul_eq_mul] }
 
--- include hs Hevens hf's
+include hs Hevens hf's
 
--- lemma is_sym_to_sym_bilin_form [nontrivial E] {x : E} (hx : x ∈ s) :
---   sym_bilin_form.is_sym (to_sym_bilin_form Hf x) :=
--- λ u v, begin
---   have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
---   have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
---     ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
---   have minor₂ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
---     (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
---     D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
---     (D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
---   rw [to_sym_bilin_form, bilin_form.coe_fn_mk, 
---       second_derivative_symmetric_of_eventually minor₂ (D23 zero_lt_two minor₁).has_fderiv_at]
--- end
+lemma is_sym_to_sym_bilin_form [nontrivial E] {x : E} (hx : x ∈ s) :
+  sym_bilin_form.is_sym (to_sym_bilin_form Hf x) :=
+λ u v, begin
+  have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
+  have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+    ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
+  have minor₂ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) 
+    (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x') x' :=
+    D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+    (D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
+  rw [to_sym_bilin_form, bilin_form.coe_fn_mk, 
+      second_derivative_symmetric_of_eventually minor₂ (D23 zero_lt_two minor₁).has_fderiv_at]
+end
 
--- include hfs hsurj
+include hfs hsurj
 
--- lemma hB (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0) : 
---   ∀ x' (hx' : x' ∈ s) u' v', ⟪u', v'⟫ = 0 → to_sym_bilin_form Hf x' u' v' = 0 :=
--- λ x' hx' u' v' huv', begin
---   have hf := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hfs a ha⟩,
---   have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, Hevens a ha⟩,
---   have hf' := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hf's a ha⟩,
---   have h := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hsurj a ha⟩,
---   simp only [to_sym_bilin_form],
---   rcases hrank3 u' v' with ⟨w', hw', huw', hwv'⟩,
---   exact tot1 hf Hf Heven hw' huv' huw' hwv' hf' h
--- end
+lemma hB (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0) : 
+  ∀ x' (hx' : x' ∈ s) u' v', ⟪u', v'⟫ = 0 → to_sym_bilin_form Hf x' u' v' = 0 :=
+λ x' hx' u' v' huv', begin
+  have hf := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hfs a ha⟩,
+  have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, Hevens a ha⟩,
+  have hf' := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hf's a ha⟩,
+  have h := eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, hsurj a ha⟩,
+  simp only [to_sym_bilin_form],
+  rcases hrank3 u' v' with ⟨w', hw', huw', hwv'⟩,
+  exact tot1 hf Hf Heven hw' huv' huw' hwv' hf' h
+end
 
--- variables [complete_space E] [nontrivial E] 
---   (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0)
+variables [complete_space E] [nontrivial E] 
+  (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0)
 
--- lemma diff_bilin {x : E} (hx : x ∈ s) :
---   differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank3) 
---   (λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy) x') x :=
--- begin
---   rcases hrank3 0 0 with ⟨w₀, hw₀, _⟩,
---   have hb := hB hs hfs hf's hsurj Hf Hevens hrank3,
---   have hb' := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy,
---   have triv₁ : ⟪w₀, w₀⟫ ≠ 0 := λ W, hw₀ (inner_self_eq_zero.mp W),
---   have minor₁ : (λ x', to_sym_bilin_form Hf x' w₀ w₀ / ⟪w₀, w₀⟫) =ᶠ[𝓝 x] 
---     λ x', (bilin_form_factor hb hb' x'),
---   { refine eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy, _⟩,
---     simp only [congr_arg, bilin_form_factor_prop hb hb' hy],
---     rw mul_div_cancel _ triv₁ },
---   simp only [to_sym_bilin_form, bilin_form.coe_fn_mk] at minor₁,
---   refine differentiable_at.congr_of_eventually_eq _ minor₁.symm,
---   simp only [div_eq_mul_inv, ← smul_eq_mul],
---   apply differentiable_at.smul_const,
---   have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
---   have triv₂ : (λ x', fderiv ℝ (fderiv ℝ $ λ y, 
---     similarity_factor_sqrt_inv $ psuedo_conf y) x' w₀ w₀) = (apply ℝ _ w₀) ∘ 
---     (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' w₀),
---   { ext1,
---     simp only [apply_apply, function.comp_app] },
---   rw triv₂,
---   refine (apply ℝ ℝ w₀).differentiable_at.comp _ (DD2 zero_lt_one (D22 _) w₀),
---   exact similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
---     ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm)
--- end
+lemma diff_bilin {x : E} (hx : x ∈ s) :
+  differentiable_at ℝ (λ x', bilin_form_factor (hB hs hfs hf's hsurj Hf Hevens hrank3) 
+  (λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy) x') x :=
+begin
+  rcases hrank3 0 0 with ⟨w₀, hw₀, _⟩,
+  have hb := hB hs hfs hf's hsurj Hf Hevens hrank3,
+  have hb' := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy,
+  have triv₁ : ⟪w₀, w₀⟫ ≠ 0 := λ W, hw₀ (inner_self_eq_zero.mp W),
+  have minor₁ : (λ x', to_sym_bilin_form Hf x' w₀ w₀ / ⟪w₀, w₀⟫) =ᶠ[𝓝 x] 
+    λ x', (bilin_form_factor hb hb' x'),
+  { refine eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy, _⟩,
+    simp only [congr_arg, bilin_form_factor_prop hb hb' hy],
+    rw mul_div_cancel _ triv₁ },
+  simp only [to_sym_bilin_form, bilin_form.coe_fn_mk] at minor₁,
+  refine differentiable_at.congr_of_eventually_eq _ minor₁.symm,
+  simp only [div_eq_mul_inv, ← smul_eq_mul],
+  apply differentiable_at.smul_const,
+  have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
+  have triv₂ : (λ x', fderiv ℝ (fderiv ℝ $ λ y, 
+    similarity_factor_sqrt_inv $ psuedo_conf y) x' w₀ w₀) = (apply ℝ _ w₀) ∘ 
+    (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' w₀),
+  { ext1,
+    simp only [apply_apply, function.comp_app] },
+  rw triv₂,
+  refine (apply ℝ ℝ w₀).differentiable_at.comp _ (DD2 zero_lt_one (D22 _) w₀),
+  exact similarity_factor_sqrt_inv_times_cont_diff_at x psuedo_conf 
+    ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm)
+end
 
--- localized "notation `H₁` := hB hs hfs hf's hsurj Hf Hevens hrank3" in liouville_do_not_use
--- localized "notation `H₂` := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy" 
---   in liouville_do_not_use
+localized "notation `H₁` := hB hs hfs hf's hsurj Hf Hevens hrank3" in liouville_do_not_use
+localized "notation `H₂` := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Hevens hy" 
+  in liouville_do_not_use
 
--- lemma fderiv_fderiv_eq_bilin_form_factor_mul {x : E} (hx : x ∈ s) (u v : E) :
---   (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v u) =ᶠ[𝓝 x] 
---   λ x', (bilin_form_factor H₁ H₂ x') * ⟪u, v⟫ :=
--- eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy,
---   by simpa [to_sym_bilin_form, bilin_form.coe_fn_congr] using bilin_form_factor_prop H₁ H₂ hy u v⟩
+lemma fderiv_fderiv_eq_bilin_form_factor_mul {x : E} (hx : x ∈ s) (u v : E) :
+  (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v u) =ᶠ[𝓝 x] 
+  λ x', (bilin_form_factor H₁ H₂ x') * ⟪u, v⟫ :=
+eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy,
+  by simpa [to_sym_bilin_form, bilin_form.coe_fn_congr] using bilin_form_factor_prop H₁ H₂ hy u v⟩
 
--- /-- Not sure if `is_connected s` is a correct hypothesis. But it seems that this argument is used
---   to show that the `bilin_form_factor` is indeed a constant. -/
--- lemma is_const_bilin_form_factor (hs' : is_connected s) :
---   ∃ (c : ℝ), ∀ x (hx : x ∈ s), (λ x', bilin_form_factor H₁ H₂ x') =ᶠ[𝓝 x] function.const _ c :=
--- begin
---   rcases hs'.nonempty with ⟨x₀, hx₀⟩,
---   refine ⟨bilin_form_factor H₁ H₂ x₀, λ x hx, 
---     eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, _⟩⟩,
---   have : ∀ y ∈ s, fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y = 0 :=
---   λ y hy, begin
---     have triv₁ : ∀ᶠ x' in 𝓝 y, 
---       times_cont_diff_at ℝ 3 (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' :=
---       eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ x' hx', 
---       similarity_factor_sqrt_inv_times_cont_diff_at x' psuedo_conf 
---       ((D22 $ hf's x' hx').congr_of_eventually_eq 
---       (eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, Hevens a ha⟩).symm)⟩,
---     have minor₁ := fderiv_fderiv_eq_bilin_form_factor_mul hs hfs hf's hsurj Hf Hevens hrank3 hy,
---     have minor₂ := diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hy,
---     have minor₃ : ∀ u v w, 
---       fderiv ℝ (fderiv ℝ $ fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) y w u v =
---       fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w * ⟪u, v⟫ :=
---     λ u v w, begin
---       have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ a ha, Hevens a ha⟩,
---       have subkey₁ := D21 (D22 $ similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
---         (D22 $ hf's y hy).congr_of_eventually_eq Heven.symm),
---       rw [← DD1' subkey₁ (D23 zero_lt_one $ D22 triv₁.self_of_nhds), (minor₁ v u).fderiv_eq, 
---           fderiv_mul_const minor₂, smul_apply, real_inner_comm, smul_eq_mul, mul_comm]
---     end,
---     ext1 v,
---     simp only [zero_apply],
---     rcases hrank3 v v with ⟨w, hw, hvw, _⟩,
---     have key_aux : fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w • v -
---       fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v • w = 0 :=
---     by rw [← inner_self_eq_zero, inner_sub_right, real_inner_smul_right, real_inner_smul_right,
---            ← minor₃, ← minor₃, third_order_symmetric triv₁, sub_self],
---     have key := eq_of_sub_eq_zero key_aux,
---     have minor₅ : (fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v) *
---       (fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v) * ⟪w, w⟫ = 0 :=
---     by rw [mul_assoc, ← real_inner_smul_left, ← key, 
---            real_inner_smul_left, hvw, mul_zero, mul_zero],
---     exact mul_self_eq_zero.mp (eq_zero_of_ne_zero_of_mul_right_eq_zero 
---       (λ W, hw $ inner_self_eq_zero.mp W) minor₅)
---   end,
---   exact λ y hy, hs.is_const_of_fderiv_eq_zero hs' (λ x' hx', 
---     (diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hx').differentiable_within_at) this hy hx₀
--- end
+/-- Not sure if `is_connected s` is a correct hypothesis. But it seems that this argument is used
+  to show that the `bilin_form_factor` is indeed a constant. -/
+lemma is_const_bilin_form_factor (hs' : is_connected s) :
+  ∃ (c : ℝ), ∀ x (hx : x ∈ s), bilin_form_factor H₁ H₂ x = c :=
+begin
+  rcases hs'.nonempty with ⟨x₀, hx₀⟩,
+  refine ⟨bilin_form_factor H₁ H₂ x₀, λ x hx, _⟩,
+  have : ∀ y ∈ s, fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y = 0 :=
+  λ y hy, begin
+    have triv₁ : ∀ᶠ x' in 𝓝 y, 
+      times_cont_diff_at ℝ 3 (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' :=
+      eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ x' hx', 
+      similarity_factor_sqrt_inv_times_cont_diff_at x' psuedo_conf 
+      ((D22 $ hf's x' hx').congr_of_eventually_eq 
+      (eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx', λ a ha, Hevens a ha⟩).symm)⟩,
+    have minor₁ := fderiv_fderiv_eq_bilin_form_factor_mul hs hfs hf's hsurj Hf Hevens hrank3 hy,
+    have minor₂ := diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hy,
+    have minor₃ : ∀ u v w, 
+      fderiv ℝ (fderiv ℝ $ fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) y w u v =
+      fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w * ⟪u, v⟫ :=
+    λ u v w, begin
+      have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ a ha, Hevens a ha⟩,
+      have subkey₁ := D21 (D22 $ similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf $
+        (D22 $ hf's y hy).congr_of_eventually_eq Heven.symm),
+      rw [← DD1' subkey₁ (D23 zero_lt_one $ D22 triv₁.self_of_nhds), (minor₁ v u).fderiv_eq, 
+          fderiv_mul_const minor₂, smul_apply, real_inner_comm, smul_eq_mul, mul_comm]
+    end,
+    ext1 v,
+    simp only [zero_apply],
+    rcases hrank3 v v with ⟨w, hw, hvw, _⟩,
+    have key_aux : fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w • v -
+      fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v • w = 0 :=
+    by rw [← inner_self_eq_zero, inner_sub_right, real_inner_smul_right, real_inner_smul_right,
+           ← minor₃, ← minor₃, third_order_symmetric triv₁, sub_self],
+    have key := eq_of_sub_eq_zero key_aux,
+    have minor₅ : (fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v) *
+      (fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y v) * ⟪w, w⟫ = 0 :=
+    by rw [mul_assoc, ← real_inner_smul_left, ← key, 
+           real_inner_smul_left, hvw, mul_zero, mul_zero],
+    exact mul_self_eq_zero.mp (eq_zero_of_ne_zero_of_mul_right_eq_zero 
+      (λ W, hw $ inner_self_eq_zero.mp W) minor₅)
+  end,
+  exact hs.is_const_of_fderiv_eq_zero hs' (λ x' hx', 
+    (diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hx').differentiable_within_at) this hx hx₀
+end
 
--- end bilin_form_and_local_prop
+end bilin_form_and_local_prop
 
--- section integrate
+section integrate
 
+open continuous_linear_map filter
 
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f : E → F}
+  {s : set E} (hs : is_open s) (hs' : is_connected s) (hfs : ∀ x ∈ s, conformal_at f x) 
+  (hf's : ∀ x ∈ s, times_cont_diff_at ℝ 4 f x) 
+  (hsurj : ∀ x ∈ s , function.surjective (fderiv ℝ f x))
+  {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x')
+  (Hevens : ∀ x ∈ s, fderiv ℝ f x = f' x)
 
--- end integrate
+variables [complete_space E] [nontrivial E] 
+  (hrank3 : ∀ (u v : E), ∃ w, w ≠ 0 ∧ ⟪u, w⟫ = 0 ∧ ⟪w, v⟫ = 0)
 
--- section conformality_of_local_inverse
+localized "notation `psuedo_conf` := λ y, @filter.eventually_of_forall _ _ (𝓝 y) (λ x', Hf x')"
+  in liouville_do_not_use
 
--- end conformality_of_local_inverse
+include hs hs' hfs hf's hsurj Hf Hevens hrank3
+
+lemma similarity_factor_sqrt_inv_eq_const_mul_dist_add_cost :
+  ∃ (α β : ℝ) (x₀ : E) (hx₀ : x₀ ∈ s), 
+  ∀ x ∈ s, similarity_factor_sqrt_inv (psuedo_conf x) = α * ∥x - x₀∥ ^ 2 + β :=
+begin
+  rcases hs'.nonempty with ⟨x₀, hx₀⟩,
+  rcases is_const_bilin_form_factor hs hfs hf's hsurj Hf Hevens hrank3 hs' with ⟨c, hc⟩,
+  have key₁ : ∀ (v : E), ∀ x ∈ s, 
+    fderiv ℝ (λ x', (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x' v) x =
+    fderiv ℝ (λ x', c * ⟪id x', v⟫) x :=
+  λ v x hx, begin
+    ext1 u,
+    have triv₁ := (fderiv_fderiv_eq_bilin_form_factor_mul hs hfs hf's hsurj Hf 
+      Hevens hrank3 hx u v).self_of_nhds,
+    have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
+    have minor₁ := D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf
+      $ (D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
+    have minor₂ := D23 zero_lt_two (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf
+      $ (D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
+    simp only [← smul_eq_mul],
+    rw [fderiv_const_smul (differentiable_at_id.inner $ differentiable_at_const v),
+        smul_apply, fderiv_inner_apply differentiable_at_id (differentiable_at_const v), 
+        fderiv_const_apply, zero_apply, inner_zero_right, zero_add,
+        fderiv_id, id_apply, smul_eq_mul, DD1 minor₁ minor₂],
+    simp only [congr_arg] at ⊢ triv₁,
+    rw [triv₁, hc x hx]
+  end,
+  have key₂ : ∀ x ∈ s,
+    fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x = 
+    fderiv ℝ (λ y, (c / 2 * ⟪id y - x₀, id y - x₀⟫ + 
+    fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x₀ y)) x :=
+  λ x hx, begin
+    ext1 v,
+    have triv₁ := λ y (hy : y ∈ s), ((differentiable_at_id.inner $ 
+      differentiable_at_const v).const_mul c).differentiable_within_at,
+    have triv₂ := λ y (hy : y ∈ s), 
+      (DD2 zero_lt_two (similarity_factor_sqrt_inv_times_cont_diff_at _ psuedo_conf
+      $ (D22 $ hf's y hy).congr_of_eventually_eq (eventually_eq_iff_exists_mem.mpr 
+      ⟨s, hs.mem_nhds hy, λ a ha, Hevens a ha⟩).symm) v).differentiable_within_at,
+    have minor₁ := hs.eq_sub_add_of_fderiv_eq_fderiv hs' triv₂ triv₁ (key₁ v) hx₀ x hx,
+    simp only [congr_arg, ← mul_sub, ← inner_sub_left, _root_.id] at minor₁,
+    simp only [← smul_eq_mul],
+    rw [fderiv_add (((differentiable_at_id.sub_const _).inner 
+        (differentiable_at_id.sub_const _)).const_smul _) 
+        (continuous_linear_map.differentiable_at _)]; [skip, apply_instance], 
+    rw [minor₁, continuous_linear_map.fderiv],
+    simp only [fderiv_const_smul ((differentiable_at_id.sub_const _).inner 
+        (differentiable_at_id.sub_const _)), add_apply, smul_apply, fderiv_id, fderiv_const,
+        fderiv_inner_apply (differentiable_at_id.sub_const _) (differentiable_at_id.sub_const _),
+        fderiv_sub_const _],
+    simp only [_root_.id, id_apply, smul_eq_mul],
+    rw [real_inner_comm, ← two_mul, ← mul_assoc],
+    simp
+  end,
+  have abc : differentiable_on ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) s := sorry,
+  have cba : differentiable_on ℝ (λ y, (c / 2 * ⟪id y - x₀, id y - x₀⟫ + 
+    fderiv ℝ (λ y, similarity_factor_sqrt_inv $ psuedo_conf y) x₀ y)) s := sorry,
+  have key₃ := hs.eq_sub_add_of_fderiv_eq_fderiv hs' abc cba key₂ hx₀,
+  simp only [congr_arg] at key₃,
+end
+
+end integrate
+
+section conformality_of_local_inverse
+
+end conformality_of_local_inverse
 /-
 TODO List:
 08 21
