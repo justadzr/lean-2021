@@ -5,6 +5,42 @@ noncomputable theory
 open filter continuous_linear_map
 open_locale real_inner_product_space classical filter topological_space
 
+section conformality
+
+lemma is_conformal_map.symm {R : Type*} {X Y : Type*} [nondiscrete_normed_field R]
+  [normed_group X] [normed_group Y] [normed_space R X] [normed_space R Y]
+  {f' : X ≃L[R] Y} (hf' : is_conformal_map (f' : X →L[R] Y)) : 
+  is_conformal_map (f'.symm : Y →L[R] X) :=
+begin
+  rcases hf' with ⟨c, hc, li, hli⟩,
+  simp only [f'.coe_coe] at hli,
+  have surj : li.to_linear_map.range = ⊤ :=
+  begin
+    refine linear_map.range_eq_top.mpr (λ y, ⟨c • f'.symm y, _⟩),
+    simp only [li.coe_to_linear_map, li.map_smul],
+    have : c • li (f'.symm y) = f' (f'.symm y) := by simp only [hli, pi.smul_apply],
+    rw [this, f'.apply_symm_apply]
+  end,
+  let le := linear_equiv.of_bijective li.to_linear_map
+    (linear_map.ker_eq_bot.mpr li.injective) surj,
+  let lie : X ≃ₗᵢ[R] Y :=
+  { to_linear_equiv := le,
+    norm_map' := by simp },
+  refine ⟨c⁻¹, inv_ne_zero hc, lie.symm.to_linear_isometry, _⟩,
+  ext1 y,
+  have key : (li : X → Y) = lie,
+  { ext1 x,
+    simp only [linear_isometry_equiv.coe_mk, linear_equiv.of_bijective_apply, 
+        li.coe_to_linear_map] },
+  rw [f'.symm.coe_coe, f'.symm_apply_eq, hli],
+  simp only [pi.smul_apply, function.comp_app, li.map_smul, lie.symm.coe_to_linear_isometry],
+  rw [key, lie.apply_symm_apply, smul_smul, mul_inv_cancel hc, one_smul]
+end
+
+end conformality
+
+section similarity_all
+
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f' : E → (E →L[ℝ] F)}
 
 section similarity1
@@ -181,3 +217,4 @@ end
 
 end similarity3
 
+end similarity_all
