@@ -27,16 +27,16 @@ def uhalf_plane : set ℂ := {z : ℂ | z.im > 0}
 
 localized "notation `ℍ` := uhalf_plane" in uhalf_plane
 
-namespace upper_half_plane
+section upper_half_plane
 
-@[simp] theorem uhalf_plane.is_open : is_open ℍ :=
+@[simp] lemma uhalf_plane.is_open : is_open ℍ :=
 begin
   have : ℍ = complex.im⁻¹' Ioi 0 := set.ext (λ z, iff.intro (λ hz, mem_preimage.mp hz) $ λ hz, hz),
   exact is_open.preimage complex.continuous_im is_open_Ioi,
 end
 
 
-@[simp] theorem uhalf_plane.nonempty : set.nonempty ℍ :=
+@[simp] lemma uhalf_plane.nonempty : set.nonempty ℍ :=
 begin
   rw set.nonempty_def,
   use complex.I,
@@ -45,7 +45,7 @@ begin
   exact this,
 end
 
-@[simp] theorem uhalf_plane.convex : convex ℍ :=
+@[simp] lemma uhalf_plane.convex : convex ℍ :=
 begin
   rw convex_iff_forall_pos,
   intros x y hx hy a b ha hb hab,
@@ -57,10 +57,10 @@ begin
     ... = 0 : by ring,
 end
 
-theorem uhalf_plane.is_path_connected : is_path_connected ℍ :=
+lemma uhalf_plane.is_path_connected : is_path_connected ℍ :=
 convex.is_path_connected uhalf_plane.convex uhalf_plane.nonempty
 
-@[simp] theorem uhalf_plane.is_connected : is_connected ℍ := (is_open.is_connected_iff_is_path_connected uhalf_plane.is_open).mp uhalf_plane.is_path_connected
+@[simp] lemma uhalf_plane.is_connected : is_connected ℍ := (is_open.is_connected_iff_is_path_connected uhalf_plane.is_open).mp uhalf_plane.is_path_connected
 
 instance uhalf_plane_connected : connected_space ℍ := is_connected_iff_connected_space.mp uhalf_plane.is_connected
 
@@ -72,63 +72,7 @@ instance uhalf_plane_riemann_surface : riemann_surface ℍ := topological_space.
 
 end upper_half_plane
 
-namespace rsphere
-
-def prersphere := ℂ ⊕ ℂ
-
-def rsphere_gluing : setoid prersphere :=
-{
-  r := λ a b, (a = b) ∨ ((a.get_left.iget * b.get_right.iget = 1) ∨ (a.get_right.iget * b.get_left.iget = 1)),
-  iseqv :=
-  begin
-    split,
-    exact λ x, or.intro_left _ rfl,
-    split,
-    {
-      intros a b hab, cases hab,
-      exact or.intro_left _ hab.symm,
-      cases hab,
-      { rw mul_comm at hab, exact or.intro_right _ (or.intro_right _ hab), },
-      { rw mul_comm at hab, exact or.intro_right _ (or.intro_left _ hab), },
-    },
-    {
-      intros a b c hab hbc,
-      cases hab,
-      {
-        cases hbc,
-        exact or.intro_left _ (hab.symm ▸ hbc),
-        cases hbc,
-        exact or.intro_right _ (or.intro_left _ $ hab.symm ▸ hbc),
-        exact or.intro_right _ (or.intro_right _ $ hab.symm ▸ hbc),
-      },
-      {
-        cases hab,
-        {
-          cases hbc,
-          exact or.intro_right _ (or.intro_left _ $ hbc ▸ hab),
-          cases hbc,
-          {
-            sorry,
-          },
-          {
-            sorry,
-          },
-        },
-        {
-          sorry,
-        },
-      },
-    },
-  end,
-}
-
-def rsphere := quotient rsphere_gluing
-
-instance : 
-
-end rsphere
-
-namespace extended_upper_half_plane
+section extended_upper_half_plane
 
 inductive uhalf_and_cusps
 | of_complex (z : ℂ) (hz : 0 < z.im) : uhalf_and_cusps
@@ -142,15 +86,14 @@ inductive uhalf_and_cusps
 
 end extended_upper_half_plane
 
-namespace ctorus
+section ctorus
 
 def clattice {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : set ℂ := 
 {z : ℂ | ∃ (m n : ℤ), z = (m : ℂ) * (ω 0) + (n : ℂ) * (ω 1)}
 
-theorem clattice.add_subgroup {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : 
+lemma clattice.add_subgroup {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : 
   add_subgroup ℂ :=
-{
-  carrier := clattice h,
+{ carrier := clattice h,
   zero_mem' :=
   --- Very bad proof here. WHY is this proof so slow?
   begin
@@ -179,8 +122,7 @@ theorem clattice.add_subgroup {ω : fin 2 → ℂ} (h : linear_independent ℝ �
     use (-m),
     rw [hz', neg_add],
     simp only [int.cast_neg, neg_mul_eq_neg_mul],    
-  end
-}
+  end }
 
 def ctorus {ω : fin 2 → ℂ} (h : linear_independent ℝ ω) : Type* := 
 quotient_add_group.quotient (clattice.add_subgroup h)

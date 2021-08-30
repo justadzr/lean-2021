@@ -1,68 +1,51 @@
-import tactic
-import analysis.calculus.iterated_deriv
-import topology.continuous_function.polynomial
-import topology.separation
-import topology.path_connected
-import analysis.complex.basic
-import analysis.calculus.tangent_cone
-import analysis.normed_space.units
-import analysis.asymptotics.asymptotic_equivalent
-import analysis.analytic.basic
-import geometry.manifold.algebra.smooth_functions
-import linear_algebra.finite_dimensional
-import analysis.normed_space.inner_product
-import topology.metric_space.basic
-import analysis.calculus.formal_multilinear_series
-
-open set complex classical filter asymptotics continuous_linear_map set metric is_open differentiable
-open_locale topological_space classical nnreal asymptotics filter ennreal -- unit_interval
+import analysis.complex.isometry
+import analysis.complex.real_deriv
+import analysis.calculus.conformal
 
 noncomputable theory
---variables (α : Type*) (p : α → Prop)
 
-structure point (α : Type*) :=
-mk :: (x : α) (y : α) (z : α)
+open complex linear_isometry linear_isometry_equiv continuous_linear_map
+     finite_dimensional linear_map
 
-structure rgb_val :=
-(red : nat) (green : nat) (blue : nat)
+section A
+  
+variables (𝕜 : Type*) [nondiscrete_normed_field 𝕜]
+variables {𝕜' : Type*} [nondiscrete_normed_field 𝕜'] [normed_algebra 𝕜 𝕜']
+variables {E : Type*} [normed_group E] [normed_space 𝕜 E] [normed_space 𝕜' E]
+variables [is_scalar_tower 𝕜 𝕜' E]
+variables {F : Type*} [normed_group F] [normed_space 𝕜 F] [normed_space 𝕜' F]
+variables [is_scalar_tower 𝕜 𝕜' F]
+variables {f : E → F} {f' : E →L[𝕜'] F} {s : set E} {x : E}
 
-class red_green_point (α : Type*) extends point α, rgb_val
+lemma differentiable_at_iff_exists_linear_map (hf : differentiable_at 𝕜 f x) :
+  differentiable_at 𝕜' f x ↔ ∃ (g' : E →L[𝕜'] F), g'.restrict_scalars 𝕜 = fderiv 𝕜 f x :=
+sorry
 
-def p   : point nat := {x := 10, y := 10, z := 20}
-def color : rgb_val := {red := 1, green := 2, blue := 3}
-def rgp : red_green_point ℕ :=
-{..p, ..color}
+end A
 
-example : rgp.x   = 10 := rfl
-example : rgp.red = 1 := rfl
+section B
 
-variables {m n : with_top ℕ} {𝕜 : Type*} [nondiscrete_normed_field 𝕜]
-{E : Type*} [normed_group E] [normed_space 𝕜 E]
-{H : Type*} [topological_space H]
-(I : model_with_corners 𝕜 E H)
-{M : Type*} [topological_space M]
+variables {E : Type*} [normed_group E] [normed_space ℝ E] [normed_space ℂ E]
+  [is_scalar_tower ℝ ℂ E] {z : ℂ} {g : ℂ →L[ℝ] E} {f : ℂ → E}
 
-lemma times_cont_diff_groupoid_lle1 (h : m ≤ n) :
-  times_cont_diff_groupoid n I ≤ times_cont_diff_groupoid m I :=
+lemma is_conformal_map_of_complex_linear
+  {map : ℂ →L[ℂ] E} (nonzero : map ≠ 0) : is_conformal_map (map.restrict_scalars ℝ) :=
+sorry
+
+
+lemma conformal_at_of_holomorph_or_antiholomorph_at_aux
+  (hf : differentiable_at ℝ f z) (hf' : fderiv ℝ f z ≠ 0)
+  (h : differentiable_at ℂ f z ∨ differentiable_at ℂ (f ∘ conj) (conj z)) :
+  conformal_at f z :=
 begin
-  rw [times_cont_diff_groupoid, times_cont_diff_groupoid],
-  apply groupoid_of_pregroupoid_le,
-  assume f s hfs,
-  exact times_cont_diff_on.of_le hfs h
+  rw [conformal_at_iff_is_conformal_map_fderiv],
+  cases h with h₁ h₂,
+  { rw [differentiable_at_iff_exists_linear_map ℝ hf] at h₁;
+       [skip, apply_instance, apply_instance, apply_instance],
+    rcases h₁ with ⟨map, hmap⟩,
+    have minor₁ : fderiv ℝ f z = map.restrict_scalars ℝ := hmap.symm,
+    rw minor₁,
+    refine is_conformal_map_of_complex_linear _,},
 end
 
--- example (f : ℂ → ℂ) {s : set ℂ} (h : is_open s) : 
--- differentiable_on ℂ f s → (∀ (z : ℂ), z ∈ s → differentiable_at ℂ f z):=
--- begin
---   rw _root_.differentiable_on,
---   intros h z hz,
---   specialize h z hz,
---   rw differentiable_within_at at h,
---   rcases h with ⟨f', hf⟩, 
---   rw has_fderiv_within_at at hf,
---   rw _root_.differentiable_at,
---   use f',
---   rw has_fderiv_at,
---   rw has_fderiv_at_filter at hf,
---   sorry,
--- end
+end B
