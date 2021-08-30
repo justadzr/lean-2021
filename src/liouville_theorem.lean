@@ -459,7 +459,7 @@ end
 lemma GG2 {u v : E} (hv : v ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) :
   ⟪fderiv ℝ f x v, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x v∥ ^ 2 =
   (fderiv ℝ (λ y, similarity_factor_sqrt $ psuedo_conf y) x u) *
-  similarity_factor_sqrt_inv (conf_diff) :=
+  similarity_factor_sqrt_inv conf_diff :=
 begin
   rw second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at u v,
   exact GG1 hf Hf Heven hv hf'
@@ -955,34 +955,30 @@ variables {E : Type*} [inner_product_space ℝ E] [complete_space E] [nontrivial
   -- {f' : E → (E →L[ℝ] F)} (Hf : ∀ (x' : E), is_conformal_map $ f' x')
   -- (Hevens : ∀ x ∈ s, fderiv ℝ f x = f' x)
 
-def def_helper (f : E → E) (s : set E) (x : E) :=
-if x ∈ s then fderiv ℝ f x else id ℝ E
+-- def def_helper (f : E → E) (s : set E) (x : E) :=
+-- if x ∈ s then fderiv ℝ f x else id ℝ E
 
-lemma def_helper_eq (f : local_homeomorph E E) (s : set E) {x : E} (hx : x ∈ s) :
-  fderiv ℝ f x = def_helper f s x :=
-by simp only [def_helper, if_pos hx]
+-- lemma def_helper_eq (f : local_homeomorph E E) (s : set E) {x : E} (hx : x ∈ s) :
+--   fderiv ℝ f x = def_helper f s x :=
+-- by simp only [def_helper, if_pos hx]
 
-variables {f : E → E} {s : set E} (hs : is_open s) 
-  (hs' : is_connected s) (hfs : ∀ x ∈ s, conformal_at f x) 
+variables {f : local_homeomorph E E} {s : set E} (hs : is_open s) 
+  (hs' : is_connected s) (hs'' : s ⊆ f.source) (hfs : ∀ x ∈ s, conformal_at f x) 
   (hf's : ∀ x ∈ s, times_cont_diff_at ℝ 4 f x) 
   (hsurj : ∀ x ∈ s , function.surjective (fderiv ℝ f x))
 
-include hfs
+-- lemma def_helper_is_conformal_map {x : E} :
+--   is_conformal_map (def_helper f s x) :=
+-- begin
+--   simp only [def_helper],
+--   by_cases h : x ∈ s,
+--   { rw if_pos h,
+--     exact (conformal_at_iff_is_conformal_map_fderiv.mp $ hfs x h) },
+--   { rw if_neg h,
+--     exact is_conformal_map_id }
+-- end
 
-lemma def_helper_is_conformal_map {x : E} :
-  is_conformal_map (def_helper f s x) :=
-begin
-  simp only [def_helper],
-  by_cases h : x ∈ s,
-  { rw if_pos h,
-    exact (conformal_at_iff_is_conformal_map_fderiv.mp $ hfs x h) },
-  { rw if_neg h,
-    exact is_conformal_map_id }
-end
-
-lemma foraladfasd : ∀ x, is_conformal_map (def_helper f s x) := λ x, def_helper_is_conformal_map hfs
-
-include hsurj
+include hfs hsurj
 
 def bijective_differentials {x : E} (hx : x ∈ s) : E ≃L[ℝ] E :=
 continuous_linear_equiv.of_bijective (fderiv ℝ f x) 
@@ -1001,22 +997,6 @@ begin
 end
 
 end conformality_of_local_inverse
-/-
-TODO List:
-08 22
-* Prove the local conformalities of the local inverse function
-08 23
-* Prove the relation
-  `(a|x - x₀| + b)(c|f x - f x₀| + d) = 1`
-  for all `x ∈ s`
-* Think of a way to state the geometric results as a linear algebra result
-08 24
-* Really need to by pass the transcendental function part.
-08 25
-* Try to complete the proof.
--/
-
-
 
 -- h = u
 -- k = v
