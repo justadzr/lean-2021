@@ -41,52 +41,50 @@ end conformality
 
 section similarity_all
 
-variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] {f' : E → (E →L[ℝ] F)}
+variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F]
 
 section similarity1
 
-def similarity_factor {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) : ℝ :=
-classical.some ((is_conformal_map_iff _).mp h.self_of_nhds)
+def similarity_factor (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') : ℝ :=
+classical.some ((is_conformal_map_iff _).mp h)
 
-lemma eventually_conformal_of_eventually_eq {x : E} {f'' : E → (E →L[ℝ] F)}
-  (hf' : ∀ᶠ x' in 𝓝 x, is_conformal_map $ f' x') (Heven : f' =ᶠ[𝓝 x] f'') :
-  ∀ᶠ x' in 𝓝 x, is_conformal_map (f'' x') :=
-begin
-  rcases Heven.exists_mem with ⟨s, hs, heq⟩,
-  rcases filter.eventually_iff_exists_mem.mp hf' with ⟨s', hs', heq'⟩,
-  refine filter.eventually_iff_exists_mem.mpr ⟨s ∩ s', filter.inter_sets _ hs hs', λ y hy, _⟩,
-  exact (heq hy.1) ▸ (heq' y hy.2)
-end
+lemma similarity_factor_prop (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') :
+  0 < similarity_factor x h ∧ ∀ u v, ⟪f' u, f' v⟫ = (similarity_factor x h) * ⟪u, v⟫ :=
+classical.some_spec ((is_conformal_map_iff _).mp h)
 
-lemma similarity_factor_prop {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) :
-  0 < similarity_factor h ∧ ∀ u v, ⟪f' x u, f' x v⟫ = (similarity_factor h) * ⟪u, v⟫ :=
-classical.some_spec ((is_conformal_map_iff _).mp h.self_of_nhds)
 
-lemma similarity_factor_eq_of_eventually_eq [nontrivial E] {x : E} {f'' : E → (E →L[ℝ] F)}
-  (hf' : ∀ᶠ x' in 𝓝 x, is_conformal_map $ f' x') (Heven : f' =ᶠ[𝓝 x] f'') :
-  similarity_factor (eventually_conformal_of_eventually_eq hf' Heven) = similarity_factor hf' :=
+
+lemma is_conformal_map_of_eq {f' : E →L[ℝ] F} {f'' : E →L[ℝ] F}
+  (hf' : is_conformal_map f') (H : f' = f'') : is_conformal_map f'' := 
+H ▸ hf'
+
+lemma similarity_factor_eq_of_eq [nontrivial E] {x : E} {f' : E →L[ℝ] F} {f'' : E →L[ℝ] F}
+  (hf' : is_conformal_map f') (H : f' = f'') :
+  similarity_factor x (is_conformal_map_of_eq hf' H) = similarity_factor x hf' :=
 begin
   rcases exists_ne (0 : E) with ⟨u, hu⟩,
-  have minor₁ := (similarity_factor_prop hf').2 u u,
-  have minor₂ := (similarity_factor_prop $ eventually_conformal_of_eventually_eq hf' Heven).2 u u,
+  have minor₁ := (similarity_factor_prop x hf').2 u u,
+  have minor₂ := (similarity_factor_prop x $ is_conformal_map_of_eq hf' H).2 u u,
   have minor₃ : ⟪u, u⟫ ≠ 0 := λ w, hu (inner_self_eq_zero.mp w),
-  have key : ⟪f' x u, f' x u⟫ = ⟪f'' x u, f'' x u⟫ := by rw Heven.self_of_nhds,
+  have key : ⟪f' u, f' u⟫ = ⟪f'' u, f'' u⟫ := by rw H,
   rw [minor₁, minor₂] at key,
   exact mul_right_cancel' minor₃ key.symm
 end
 
+variables {f' : E → (E →L[ℝ] F)}
+
 /-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_times_cont_diff_at [nontrivial E] (x : E)
-  (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map (f' y)) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) : 
-  times_cont_diff_at ℝ n (λ y, similarity_factor $ h y) x :=
+  (h : ∀ y, is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) : 
+  times_cont_diff_at ℝ n (λ y, similarity_factor y $ h y) x :=
 begin
   rcases exists_ne (0 : E) with ⟨v, hv⟩,
   have minor₁ : ∥v∥ ≠ 0 := λ w, hv (norm_eq_zero.mp w),
-  have minor₂ : ∀ y, similarity_factor (h y) = ∥f' y v∥ ^ 2 / ∥v∥ ^ 2 :=
-  λ y, by rw [← mul_div_cancel (similarity_factor $ h y) (pow_ne_zero 2 minor₁), pow_two, 
-              ← real_inner_self_eq_norm_sq, ← (similarity_factor_prop $ h y).2, 
+  have minor₂ : ∀ y, similarity_factor y (h y) = ∥f' y v∥ ^ 2 / ∥v∥ ^ 2 :=
+  λ y, by rw [← mul_div_cancel (similarity_factor y $ h y) (pow_ne_zero 2 minor₁), pow_two, 
+              ← real_inner_self_eq_norm_sq, ← (similarity_factor_prop y $ h y).2, 
               real_inner_self_eq_norm_sq, ← pow_two],
-  have minor₃ : (λ x, similarity_factor $ h x) =
+  have minor₃ : (λ x, similarity_factor x $ h x) =
     λ x, ∥(λ y, ((apply ℝ F v) ∘ f') y) x∥ ^ 2 / ∥v∥ ^ 2,
   { ext1 x,
     simp only [minor₂ x, apply_apply, function.comp_app] },
@@ -101,60 +99,72 @@ end similarity1
 
 section similarity2
 
-def similarity_factor_sqrt {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) : ℝ :=
-real.sqrt (similarity_factor h)
+def similarity_factor_sqrt (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') : ℝ :=
+real.sqrt (similarity_factor x h)
 
-lemma similarity_factor_sqrt_eq' {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) :
-  similarity_factor_sqrt h ^ 2 = similarity_factor h :=
-by simp only [similarity_factor_sqrt, real.sq_sqrt (le_of_lt (similarity_factor_prop h).1)]
+lemma similarity_factor_sqrt_eq' {x : E} {f' : E →L[ℝ] F} (h : is_conformal_map f') :
+  similarity_factor_sqrt x h ^ 2 = similarity_factor x h :=
+by simp only [similarity_factor_sqrt, real.sq_sqrt (le_of_lt (similarity_factor_prop x h).1)]
 
-lemma similarity_factor_sqrt_eq (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) :
-  (λ x, (similarity_factor_sqrt $ h x) ^ 2) = (λ x, similarity_factor $ h x) :=
+lemma similarity_factor_sqrt_prop (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') : 
+  similarity_factor_sqrt x h ≠ 0 ∧ 
+  ∀ u v, ⟪f' u, f' v⟫ = (similarity_factor_sqrt x h) ^ 2 * ⟪u, v⟫ :=
 begin
-  ext1 y, 
-  simp only [similarity_factor_sqrt, real.sq_sqrt (le_of_lt (similarity_factor_prop $ h y).1)]
+  refine ⟨real.sqrt_ne_zero'.mpr (similarity_factor_prop x h).1, λ u v, _⟩,
+  simp only [(similarity_factor_prop x h).2, similarity_factor_sqrt, 
+             real.sq_sqrt (le_of_lt (similarity_factor_prop x h).1)]
 end
 
-lemma similarity_factor_sqrt_eq_of_eventually_eq [nontrivial E] {x : E} {f'' : E → (E →L[ℝ] F)}
-  (hf' : ∀ᶠ x' in 𝓝 x, is_conformal_map $ f' x') (Heven : f' =ᶠ[𝓝 x] f'') :
-  similarity_factor_sqrt (eventually_conformal_of_eventually_eq hf' Heven) = 
-  similarity_factor_sqrt hf' :=
-by simp only [similarity_factor_sqrt, similarity_factor_eq_of_eventually_eq]
-
-lemma similarity_factor_sqrt_prop {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) : 
-  similarity_factor_sqrt h ≠ 0 ∧ 
-  ∀ u v, ⟪f' x u, f' x v⟫ = (similarity_factor_sqrt h) ^ 2 * ⟪u, v⟫ :=
-begin
-  refine ⟨real.sqrt_ne_zero'.mpr (similarity_factor_prop h).1, λ u v, _⟩,
-  simp only [(similarity_factor_prop h).2, similarity_factor_sqrt, 
-             real.sq_sqrt (le_of_lt (similarity_factor_prop h).1)]
-end
+variables {f' : E → (E →L[ℝ] F)}
 
 /-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_times_cont_diff_at [nontrivial E] (x : E)
-  (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
-  times_cont_diff_at ℝ n (λ y, similarity_factor_sqrt $ h y) x :=
+  (h : ∀ y, is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
+  times_cont_diff_at ℝ n (λ y, similarity_factor_sqrt y $ h y) x :=
 begin
   simp only [similarity_factor_sqrt],
-  refine times_cont_diff_at.sqrt _ (ne_of_gt (similarity_factor_prop $ h x).1),
+  refine times_cont_diff_at.sqrt _ (ne_of_gt (similarity_factor_prop x $ h x).1),
   exact similarity_factor_times_cont_diff_at x h H
 end
+
+lemma similarity_factor_sqrt_eq (h : ∀ y, is_conformal_map $ f' y) :
+  (λ x, (similarity_factor_sqrt x $ h x) ^ 2) = (λ x, similarity_factor x $ h x) :=
+begin
+  ext1 y, 
+  simp only [similarity_factor_sqrt, real.sq_sqrt (le_of_lt (similarity_factor_prop y $ h y).1)]
+end
+
+lemma similarity_factor_sqrt_eq_of_eq [nontrivial E] {x : E} 
+  {f' : E →L[ℝ] F} {f'' : E →L[ℝ] F} (hf' : is_conformal_map f') (H : f' = f'') :
+  similarity_factor_sqrt x (is_conformal_map_of_eq hf' H) = similarity_factor_sqrt x hf' :=
+by simp only [similarity_factor_sqrt, similarity_factor_eq_of_eq]
 
 end similarity2
 
 section similarity3
 
-def similarity_factor_sqrt_inv {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) : ℝ :=
-(similarity_factor_sqrt h)⁻¹
+def similarity_factor_sqrt_inv (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') : ℝ :=
+(similarity_factor_sqrt x h)⁻¹
 
-lemma similarity_factor_sqrt_inv_eq' {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) :
-  (similarity_factor_sqrt_inv h)⁻¹ ^ 2 = similarity_factor h :=
+lemma similarity_factor_sqrt_inv_eq' (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') :
+  (similarity_factor_sqrt_inv x h)⁻¹ ^ 2 = similarity_factor x h :=
 by simp only [similarity_factor_sqrt_inv, similarity_factor_sqrt, 
-              inv_inv', real.sq_sqrt (le_of_lt (similarity_factor_prop h).1)]
+              inv_inv', real.sq_sqrt (le_of_lt (similarity_factor_prop x h).1)]
+
+
+lemma similarity_factor_sqrt_inv_prop (x : E) {f' : E →L[ℝ] F} (h : is_conformal_map f') :
+  similarity_factor_sqrt_inv x h ≠ 0 ∧ 
+  ∀ u v, ⟪f' u, f' v⟫ = ((similarity_factor_sqrt_inv x h)⁻¹) ^ 2 * ⟪u, v⟫ :=
+begin
+  refine ⟨inv_ne_zero (similarity_factor_sqrt_prop x h).1, λ u v, _⟩,
+  simp only [(similarity_factor_sqrt_prop x h).2, similarity_factor_sqrt_inv, inv_inv']
+end
+
+variables {f' : E → (E →L[ℝ] F)}
 
 /-- TODO: refine the hypothesis `h` -/
-lemma similarity_factor_sqrt_inv_eq (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) :
-  (λ x, (similarity_factor_sqrt_inv $ h x)⁻¹ ^ 2) = (λ x, similarity_factor $ h x) :=
+lemma similarity_factor_sqrt_inv_eq (h : ∀ y, is_conformal_map $ f' y) :
+  (λ x, (similarity_factor_sqrt_inv x $ h x)⁻¹ ^ 2) = (λ x, similarity_factor x $ h x) :=
 begin
   ext1 y,
   simp only [similarity_factor_sqrt_inv, inv_inv'],
@@ -162,46 +172,37 @@ begin
   simpa [congr_arg] using this
 end
 
-lemma similarity_factor_sqrt_inv_eq_of_eventually_eq [nontrivial E] {x : E} {f'' : E → (E →L[ℝ] F)}
-  (hf' : ∀ᶠ x' in 𝓝 x, is_conformal_map $ f' x') (Heven : f' =ᶠ[𝓝 x] f'') :
-  similarity_factor_sqrt_inv (eventually_conformal_of_eventually_eq hf' Heven) = 
-  similarity_factor_sqrt_inv hf' :=
-by simp only [similarity_factor_sqrt_inv, similarity_factor_sqrt_eq_of_eventually_eq]
+lemma similarity_factor_sqrt_inv_eq_of_eq [nontrivial E] {x : E} 
+  {f' : E →L[ℝ] F} {f'' : E →L[ℝ] F} (hf' : is_conformal_map f') (H : f' = f'') :
+  similarity_factor_sqrt_inv x (is_conformal_map_of_eq hf' H) = similarity_factor_sqrt_inv x hf' :=
+by simp only [similarity_factor_sqrt_inv, similarity_factor_sqrt_eq_of_eq]
 
 /-- TODO: refine the hypothesis `h` -/
-lemma similarity_factor_sqrt_inv_eq_comp_inv (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) :
-  (λ x, similarity_factor_sqrt_inv $ h x) = (λ x, x⁻¹) ∘ (λ x, similarity_factor_sqrt $ h x) :=
+lemma similarity_factor_sqrt_inv_eq_comp_inv (h : ∀ y, is_conformal_map $ f' y) :
+  (λ x, similarity_factor_sqrt_inv x $ h x) = (λ x, x⁻¹) ∘ (λ x, similarity_factor_sqrt x $ h x) :=
 begin
   ext1,
   simp only [function.comp_app, similarity_factor_sqrt_inv]
 end
 
-lemma similarity_factor_sqrt_inv_prop {x : E} (h : ∀ᶠ x' in 𝓝 x, is_conformal_map (f' x')) :
-  similarity_factor_sqrt_inv h ≠ 0 ∧ 
-  ∀ u v, ⟪f' x u, f' x v⟫ = ((similarity_factor_sqrt_inv h)⁻¹) ^ 2 * ⟪u, v⟫ :=
-begin
-  refine ⟨inv_ne_zero (similarity_factor_sqrt_prop h).1, λ u v, _⟩,
-  simp only [(similarity_factor_sqrt_prop h).2, similarity_factor_sqrt_inv, inv_inv']
-end
 
 /-- TODO: refine the hypothesis `h` -/
 lemma similarity_factor_sqrt_inv_times_cont_diff_at [nontrivial E] (x : E)
-  (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
-  times_cont_diff_at ℝ n (λ x, similarity_factor_sqrt_inv $ h x) x :=
+  (h : ∀ y, is_conformal_map $ f' y) {n : ℕ} (H : times_cont_diff_at ℝ n f' x) :
+  times_cont_diff_at ℝ n (λ x, similarity_factor_sqrt_inv x $ h x) x :=
 begin
   simp only [similarity_factor_sqrt_inv],
-  refine times_cont_diff_at.inv _ (similarity_factor_sqrt_prop $ h x).1,
+  refine times_cont_diff_at.inv _ (similarity_factor_sqrt_prop x $ h x).1,
   exact similarity_factor_sqrt_times_cont_diff_at x h H
 end
 
 /-- TODO: refine the hypothesis `h` -/
-lemma similarity_factor_sqrt_inv_fderiv [nontrivial E] 
-  (x : E) (h : ∀ x', ∀ᶠ y in 𝓝 x', is_conformal_map $ f' y) 
+lemma similarity_factor_sqrt_inv_fderiv [nontrivial E] (x : E) (h : ∀ y, is_conformal_map $ f' y) 
   {n : ℕ} (hn : 0 < n) (H : times_cont_diff_at ℝ n f' x) :
-  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ h y) x : E → ℝ) = 
-  -(fderiv ℝ (λ y, similarity_factor_sqrt $ h y) x) * (λ y, (similarity_factor $ h x)⁻¹) :=
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ h y) x : E → ℝ) = 
+  -(fderiv ℝ (λ y, similarity_factor_sqrt y $ h y) x) * (λ y, (similarity_factor x $ h x)⁻¹) :=
 begin
-  have minor₁ := (similarity_factor_sqrt_prop $ h x).1,
+  have minor₁ := (similarity_factor_sqrt_prop x $ h x).1,
   have minor₂ : (1 : with_top ℕ) ≤ n :=
     by { apply with_top.coe_le_coe.mpr, linarith [hn] },
   have minor₃ := (similarity_factor_sqrt_times_cont_diff_at x h H).differentiable_at minor₂,
