@@ -272,8 +272,8 @@ begin
   have minor₂ : (1 : with_top ℕ) ≤ n :=
     by { apply with_top.coe_le_coe.mpr, linarith [hn] },
   have minor₃ := (similarity_factor_sqrt_times_cont_diff_at x h H).differentiable_at minor₂,
-  rw [similarity_factor_sqrt_inv_eq_comp_inv, fderiv.comp _ (differentiable_at_inv _), fderiv_inv];
-  [skip, exact minor₁, exact minor₃, exact minor₁],
+  rw [similarity_factor_sqrt_inv_eq_comp_inv, fderiv.comp _ (differentiable_at_inv.mpr _), 
+      fderiv_inv]; [skip, exact minor₃, exact minor₁],
   simp only [continuous_linear_map.coe_comp'],
   ext1 y,
   simp only [function.comp_app, continuous_linear_map.smul_right_apply,
