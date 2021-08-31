@@ -395,19 +395,19 @@ include Hf Heven
 lemma G [nontrivial E] (hf' : times_cont_diff_at ℝ 2 f x) (u v : E)  : 
   ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x u⟫ + 
   ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ =
-  2 * ((similarity_factor_sqrt x conf_diff') * 
-  (fderiv ℝ (λ y, similarity_factor_sqrt y $ Hf y) x v) * ⟪u, u⟫) :=
+  2 * ((similarity_factor_sqrt conf_diff') * 
+  (fderiv ℝ (λ y, similarity_factor_sqrt $ Hf y) x v) * ⟪u, u⟫) :=
 begin
   rcases filter.eventually_eq_iff_exists_mem.mp Heven with ⟨s, hs, heq⟩,
   rw ← D' u u v zero_lt_one hf',
   have : (λ (y : E), ⟪fderiv ℝ f y u, fderiv ℝ f y u⟫) =ᶠ[𝓝 x] 
-    (λ y, ⟪u, u⟫ * id y) ∘ (λ y, similarity_factor y $ Hf y),
+    (λ y, ⟪u, u⟫ * id y) ∘ (λ y, similarity_factor $ Hf y),
   { rw filter.eventually_eq_iff_exists_mem,
     refine ⟨s, hs, _⟩,
     intros z hz,
     simp only [function.comp_app, congr_arg],
     rw [mul_comm, heq hz],
-    exact (similarity_factor_prop z $ Hf z).2 u u },
+    exact (similarity_factor_prop $ Hf z).2 u u },
   have minor₁ := (D22 hf').congr_of_eventually_eq Heven.symm,
   have minor₂ := (similarity_factor_times_cont_diff_at x Hf minor₁).differentiable_at 
     (le_of_eq rfl),
@@ -427,7 +427,7 @@ end
 
 lemma GG' {u v : E} (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) : 
   ⟪fderiv ℝ (fderiv ℝ f) x u v, fderiv ℝ f x u⟫ / ⟪u, u⟫ = 
-  similarity_factor_sqrt x conf_diff' * (fderiv ℝ (λ y, similarity_factor_sqrt y $ Hf y) x v) :=
+  similarity_factor_sqrt conf_diff' * (fderiv ℝ (λ y, similarity_factor_sqrt $ Hf y) x v) :=
 begin
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
   have key := G hf Hf Heven hf' u v,
@@ -440,23 +440,23 @@ end
 
 lemma GG1 {u v : E} (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) : 
   ⟪fderiv ℝ f x u, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x u∥ ^ 2 =
-  (fderiv ℝ (λ y, similarity_factor_sqrt y $ Hf y) x v) *
-  similarity_factor_sqrt_inv x conf_diff' :=
+  (fderiv ℝ (λ y, similarity_factor_sqrt $ Hf y) x v) *
+  similarity_factor_sqrt_inv conf_diff' :=
 begin
   rw [pow_two, ← real_inner_self_eq_norm_sq],
   have triv₁ : ⟪u, u⟫ ≠ 0 := λ W, hu (inner_self_eq_zero.mp W),
   rw [← div_mul_div_cancel _ triv₁,
-      (similarity_factor_sqrt_inv_prop x conf_diff').2,
+      (similarity_factor_sqrt_inv_prop conf_diff').2,
       real_inner_comm, GG' hf Hf Heven hu hf'],
   simp only [similarity_factor_sqrt_inv, inv_inv', congr_arg],
-  field_simp [triv₁, (similarity_factor_sqrt_prop x conf_diff').1],
+  field_simp [triv₁, (similarity_factor_sqrt_prop conf_diff').1],
   ring
 end
 
 lemma GG2 {u v : E} (hv : v ≠ 0) (hf' : times_cont_diff_at ℝ 2 f x) :
   ⟪fderiv ℝ f x v, fderiv ℝ (fderiv ℝ f) x u v⟫ / ∥fderiv ℝ f x v∥ ^ 2 =
-  (fderiv ℝ (λ y, similarity_factor_sqrt y $ Hf y) x u) *
-  similarity_factor_sqrt_inv x conf_diff' :=
+  (fderiv ℝ (λ y, similarity_factor_sqrt $ Hf y) x u) *
+  similarity_factor_sqrt_inv conf_diff' :=
 begin
   rw second_derivative_symmetric_of_eventually (D21 hf') (D23 zero_lt_one hf').has_fderiv_at u v,
   exact GG1 hf Hf Heven hv hf'
@@ -468,9 +468,9 @@ open_locale filter
 lemma GGG_eventually_eq {u v : E} {s : set E} (hxs : x ∈ s) 
   (hs : is_open s) (hu : u ≠ 0) (hv : v ≠ 0) (huv : ⟪u, v⟫ = 0)
   (hf' : ∀ y ∈ s, times_cont_diff_at ℝ 2 f y) (h : ∀ y ∈ s, function.surjective (fderiv ℝ f y)) : 
-  (λ x', (similarity_factor_sqrt_inv x' $ Hf x') • (fderiv ℝ (fderiv ℝ f) x' u v) +
-  (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x' v) • fderiv ℝ f x' u + 
-  (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x' u) • fderiv ℝ f x' v) =ᶠ[𝓝 x] 
+  (λ x', (similarity_factor_sqrt_inv $ Hf x') • (fderiv ℝ (fderiv ℝ f) x' u v) +
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x' v) • fderiv ℝ f x' u + 
+  (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x' u) • fderiv ℝ f x' v) =ᶠ[𝓝 x] 
   λ x', (0 : F) :=
 begin
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
@@ -503,9 +503,9 @@ begin
 end
 
 lemma J1 {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 3 f x') :
-  fderiv ℝ (λ x, (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x v) • 
-  fderiv ℝ f x u) x w = fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x w v • 
-  fderiv ℝ f x u + fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x v • 
+  fderiv ℝ (λ x, (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x v) • 
+  fderiv ℝ f x u) x w = fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x w v • 
+  fderiv ℝ f x u + fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x v • 
   fderiv ℝ (fderiv ℝ f) x w u :=
 begin
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
@@ -514,8 +514,8 @@ begin
   have minor₁ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
   have minor₂ := D23 zero_lt_two hf'.self_of_nhds,
   have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := hf'.mono (λ a ha, D22 ha),
-  have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv y $ Hf y) 
-    (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x') x' :=
+  have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ Hf y) 
+    (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x') x' :=
     D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ Hf $
     minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
   have minor₅ := D23 zero_lt_one minor₀,
@@ -532,9 +532,9 @@ begin
 end
 
 lemma J2 {u : E} (v w : E) (hu : u ≠ 0) (hf' : times_cont_diff_at ℝ 4 f x) :
-  fderiv ℝ (λ x', (similarity_factor_sqrt_inv x' $ Hf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
-  = fderiv ℝ (λ x', similarity_factor_sqrt_inv x' $ Hf x') x w • 
-  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv x conf_diff' •
+  fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ Hf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
+  = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ Hf x') x w • 
+  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff' •
   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x w u v :=
 begin
   haveI : nontrivial E := nontrivial_of_ne u 0 hu,
@@ -551,9 +551,9 @@ begin
 end
 
 lemma J2' {u : E} (v w : E) (hu : u ≠ 0) (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') :
-  fderiv ℝ (λ x', (similarity_factor_sqrt_inv x' $ Hf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
-  = fderiv ℝ (λ x', similarity_factor_sqrt_inv x' $ Hf x') x w • 
-  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv x conf_diff' •
+  fderiv ℝ (λ x', (similarity_factor_sqrt_inv $ Hf x') • fderiv ℝ (fderiv ℝ f) x' u v) x w 
+  = fderiv ℝ (λ x', similarity_factor_sqrt_inv $ Hf x') x w • 
+  fderiv ℝ (fderiv ℝ f) x u v + similarity_factor_sqrt_inv conf_diff' •
   fderiv ℝ (fderiv ℝ $ fderiv ℝ f) x v u w :=
 by rw [J2 hf Hf Heven v w hu hf'.self_of_nhds, 
        third_order_symmetric (hf'.mono $ λ a ha, ha.of_le $ 
@@ -563,7 +563,7 @@ lemma tot1 {u v w : E}
   (hw : w ≠ 0) (huv : ⟪u, v⟫ = 0) (huw : ⟪u, w⟫ = 0) (hwv : ⟪w, v⟫ = 0)
   (hf' : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 4 f x') 
   (h : ∀ᶠ x' in 𝓝 x , function.surjective (fderiv ℝ f x')) :
-  fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x v u = 0 :=
+  fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x v u = 0 :=
 begin
   by_cases hv : v ≠ 0; by_cases hu : u ≠ 0,
   { have triv₁ : (2 : with_top ℕ) ≤ 4,
@@ -581,8 +581,8 @@ begin
     have minor₂ := hf.mono (λ x' hx', hx'.differentiable_at.has_fderiv_at),
     have minor₃ : ∀ᶠ x' in 𝓝 x, times_cont_diff_at ℝ 2 (fderiv ℝ f) x' := 
       hf'.mono (λ a ha, D22 $ ha.of_le triv₂),
-    have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv y $ Hf y) 
-      (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x') x' :=
+    have minor₄ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ Hf y) 
+      (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x') x' :=
       D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ Hf $
       minor₃.self_of_nhds.congr_of_eventually_eq Heven.symm),
     rcases eventually_iff_exists_mem.mp hf' with ⟨s₁, hs₁, hy₁⟩,
@@ -641,7 +641,7 @@ begin
     have triv₄ : ⟪fderiv ℝ f x w, fderiv ℝ f x w⟫ ≠ 0 := 
       λ W, (hw $ inner_self_eq_zero.mp $ (A conf_diff').mpr W),
     rw [← mul_div_cancel 
-        (fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x v u) triv₄],
+        (fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x v u) triv₄],
     simp only [congr_arg] at key,
     rw [← real_inner_smul_right, ← key, real_inner_smul_right, 
         (A conf_diff').mp hwv, mul_zero, zero_div] },
@@ -666,7 +666,7 @@ variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F] 
   (Hevens : ∀ x ∈ s, fderiv ℝ f x = f' x)
 
 def to_sym_bilin_form (x : E) : bilin_form ℝ E :=
-{ bilin := λ u v, fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x v u,
+{ bilin := λ u v, fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x v u,
   bilin_add_left := λ x y z, by simp only [map_add],
   bilin_smul_left := λ s x y, by simp only [map_smul, smul_eq_mul],
   bilin_add_right := λ x y z, by simp only [map_add, add_apply],
@@ -680,8 +680,8 @@ lemma is_sym_to_sym_bilin_form [nontrivial E] {x : E} (hx : x ∈ s) :
   have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
   have minor₁ := similarity_factor_sqrt_inv_times_cont_diff_at x Hf 
     ((D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
-  have minor₂ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv y $ Hf y) 
-    (fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x') x' :=
+  have minor₂ : ∀ᶠ x' in 𝓝 x, has_fderiv_at (λ y, similarity_factor_sqrt_inv $ Hf y) 
+    (fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x') x' :=
     D21 (similarity_factor_sqrt_inv_times_cont_diff_at _ Hf $
     (D22 $ hf's x hx).congr_of_eventually_eq Heven.symm),
   rw [to_sym_bilin_form, bilin_form.coe_fn_mk, 
@@ -724,8 +724,8 @@ begin
   apply differentiable_at.smul_const,
   have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ a ha, Hevens a ha⟩,
   have triv₂ : (λ x', fderiv ℝ (fderiv ℝ $ λ y, 
-    similarity_factor_sqrt_inv y $ Hf y) x' w₀ w₀) = (apply ℝ _ w₀) ∘ 
-    (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x' w₀),
+    similarity_factor_sqrt_inv $ Hf y) x' w₀ w₀) = (apply ℝ _ w₀) ∘ 
+    (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x' w₀),
   { ext1,
     simp only [apply_apply, function.comp_app] },
   rw triv₂,
@@ -739,7 +739,7 @@ localized "notation `H₂` := λ y hy, is_sym_to_sym_bilin_form hs hf's Hf Heven
   in liouville_do_not_use
 
 lemma fderiv_fderiv_eq_bilin_form_factor_mul {x : E} (hx : x ∈ s) (u v : E) :
-  (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x' v u) =ᶠ[𝓝 x] 
+  (λ x', fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x' v u) =ᶠ[𝓝 x] 
   λ x', (bilin_form_factor H₁ H₂ x') * ⟪u, v⟫ :=
 eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hx, λ y hy,
   by simpa [to_sym_bilin_form, bilin_form.coe_fn_congr] using bilin_form_factor_prop H₁ H₂ hy u v⟩
@@ -754,7 +754,7 @@ begin
   have : ∀ y ∈ s, fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y = 0 :=
   λ y hy, begin
     have triv₁ : ∀ᶠ x' in 𝓝 y, 
-      times_cont_diff_at ℝ 3 (λ y, similarity_factor_sqrt_inv y $ Hf y) x' :=
+      times_cont_diff_at ℝ 3 (λ y, similarity_factor_sqrt_inv $ Hf y) x' :=
       eventually_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ x' hx', 
       similarity_factor_sqrt_inv_times_cont_diff_at x' Hf 
       ((D22 $ hf's x' hx').congr_of_eventually_eq 
@@ -762,7 +762,7 @@ begin
     have minor₁ := fderiv_fderiv_eq_bilin_form_factor_mul hs hfs hf's hsurj Hf Hevens hrank3 hy,
     have minor₂ := diff_bilin hs hfs hf's hsurj Hf Hevens hrank3 hy,
     have minor₃ : ∀ u v w, 
-      fderiv ℝ (fderiv ℝ $ fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) y w u v =
+      fderiv ℝ (fderiv ℝ $ fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) y w u v =
       fderiv ℝ (λ x', bilin_form_factor H₁ H₂ x') y w * ⟪u, v⟫ :=
     λ u v w, begin
       have Heven := eventually_eq_iff_exists_mem.mpr ⟨s, hs.mem_nhds hy, λ a ha, Hevens a ha⟩,
@@ -817,11 +817,11 @@ open inner_product_space
 lemma similarity_factor_sqrt_inv_eq_const_mul_dist_add_const 
   (hnonzero : ∀ x ∈ s, bilin_form_factor H₁ H₂ x ≠ 0) :
   ∃ (α β : ℝ) (hα : α ≠ 0) (x₀ : E), 
-  ∀ x ∈ s, similarity_factor_sqrt_inv x (Hf x) = α * ∥x - x₀∥ ^ 2 + β :=
+  ∀ x ∈ s, similarity_factor_sqrt_inv (Hf x) = α * ∥x - x₀∥ ^ 2 + β :=
 begin
   rcases is_const_bilin_form_factor hs hfs hf's hsurj Hf Hevens hrank3 hs' with ⟨c, hc⟩,
   have key₁ : ∀ x ∈ s, 
-    fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x =
+    fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x =
     fderiv ℝ (λ y, c • to_dual y) x :=
   λ x hx, begin
     ext v u,
@@ -852,7 +852,7 @@ begin
     by simp only [x₀, to_dual.apply_symm_apply, smul_inv_smul' Hc],
   simp only [← triv₃, ← smul_sub, ← to_dual.map_sub] at h,
   have key₂ : ∀ x ∈ s,
-    fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x = 
+    fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x = 
     fderiv ℝ (λ y, c / 2 * ⟪id y - x₀, id y⟫ - (c / 2) * to_dual x₀ (y - x₀)) x :=
   λ x hx, begin
     ext1 v,
@@ -896,11 +896,11 @@ end
 lemma similarity_factor_sqrt_inv_eq_inner_add_const
   (hzero : ∃ x ∈ s, bilin_form_factor H₁ H₂ x = 0) :
   ∃ (β : ℝ) (x₀ : E), 
-  ∀ x ∈ s, similarity_factor_sqrt_inv x (Hf x) = ⟪x, x₀⟫ + β :=
+  ∀ x ∈ s, similarity_factor_sqrt_inv (Hf x) = ⟪x, x₀⟫ + β :=
 begin
   rcases is_const_bilin_form_factor hs hfs hf's hsurj Hf Hevens hrank3 hs' with ⟨c, hc⟩,
   have key₁ : ∀ x ∈ s, 
-    fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv y $ Hf y) x =
+    fderiv ℝ (fderiv ℝ $ λ y, similarity_factor_sqrt_inv $ Hf y) x =
     fderiv ℝ (λ y, c • to_dual y) x :=
   λ x hx, begin
     ext v u,
@@ -925,7 +925,7 @@ begin
   end,
   simp only [Hc, zero_smul, zero_sub] at h,
   have key₂ : ∀ x ∈ s,
-    fderiv ℝ (λ y, similarity_factor_sqrt_inv y $ Hf y) x =
+    fderiv ℝ (λ y, similarity_factor_sqrt_inv $ Hf y) x =
     fderiv ℝ (-map : E →L[ℝ] ℝ) x :=
   λ x hx, by ext1 v; rw [h x hx, (-map).fderiv],
   have triv₄ := λ y hy, ((similarity_factor_sqrt_inv_times_cont_diff_at _ Hf
