@@ -38,27 +38,74 @@ begin
   rw [key, lie.apply_symm_apply, smul_smul, mul_inv_cancel hc, one_smul]
 end
 
-/-- The inversion map in a sphere at `x₀` of radius `|r|`. -/
-def inversion {X : Type*} [normed_group X] [normed_space ℝ X] (r : ℝ) (x₀ : X) : X → X := 
-λ x, x₀ + (r ^ 2 * (∥x - x₀∥ ^ 2)⁻¹) • (x - x₀)
+/-- The inversion map in a sphere at `x₀` of radius `r ^ 1/2`. -/
+def inversion {X : Type*} [normed_group X] [normed_space ℝ X] 
+  {r : ℝ} (hr : 0 < r) (x₀ : X) : X → X := 
+λ x, x₀ + (r * (∥x - x₀∥ ^ 2)⁻¹) • (x - x₀)
 
 lemma fderiv_inversion {X : Type*} [inner_product_space ℝ X] 
-  (r : ℝ) (x₀ : X) {x : X} (hx : x ≠ x₀) : fderiv ℝ (inversion r x₀) x = 0 :=
+  {r : ℝ} (hr : 0 < r) {x₀ : X} {y x : X} (hx : x ≠ x₀) : 
+  fderiv ℝ (inversion hr x₀) x y = r • (∥x - x₀∥ ^ 4)⁻¹ • 
+  (∥x - x₀∥ ^ 2 • y - (2 : ℝ) • ⟪y, x - x₀⟫ • (x - x₀)) :=
 begin
-  have : ⟪x - x₀, x - x₀⟫ ≠ 0 := λ w, (sub_ne_zero.mpr hx) (inner_self_eq_zero.mp w),
+  have triv₁ : ⟪x - x₀, x - x₀⟫ ≠ 0 := λ w, (sub_ne_zero.mpr hx) (inner_self_eq_zero.mp w),
+  have triv₂ : ∥x - x₀∥ ≠ 0 := λ w, hx (norm_sub_eq_zero_iff.mp w),
   simp only [inversion],
   rw [fderiv_const_add, fderiv_smul _ (differentiable_at_id'.sub_const _), 
       fderiv_sub_const, fderiv_id', fderiv_const_mul],
   simp only [pow_two, ← real_inner_self_eq_norm_sq],
-  rw [fderiv.comp (differentiable_at_inv.mpr this), fderiv_inv],
+  have minor₁ := differentiable_at_inv.mpr triv₁,
+  --have := fderiv.comp _ _ 
+  --((differentiable_at_id'.sub_const x₀).inner $ differentiable_at_id'.sub_const x₀),
+  rw [fderiv.comp, fderiv_inv],
+  simp only [add_apply, smul_right_apply, smul_apply, coe_comp', function.comp_app, one_apply,
+             id_apply],
+  rw fderiv_inner_apply (differentiable_at_id'.sub_const x₀) (differentiable_at_id'.sub_const x₀),
+  rw [fderiv_sub_const, fderiv_id'],
+  simp only [id_apply, congr_arg],
+  { rw [real_inner_self_eq_norm_sq, ← pow_two] at triv₁,
+    nth_rewrite 2 real_inner_comm,
+    simp only [smul_smul, real_inner_self_eq_norm_sq, ← pow_two, smul_sub, smul_smul],
+    simp only [smul_eq_mul, mul_add, add_mul, add_smul],
+    nth_rewrite 10 mul_comm,
+    have : ∥x - x₀∥ ^ 2 * (∥x - x₀∥ ^ 4)⁻¹ = (∥x - x₀∥ ^ 2)⁻¹ := 
+      by field_simp [triv₁]; rw ← pow_add; norm_num; rw div_self (pow_ne_zero _ triv₂),
+    rw this,
+    simp only [← pow_mul],
+    norm_num,
+    simp only [← neg_add, sub_neg_eq_add, ← sub_add, two_mul, mul_add, add_smul],
+    rw [real_inner_comm, real_inner_comm, real_inner_comm, real_inner_comm],
+    ring_nf,
+    simp only [← add_assoc, ← sub_eq_add_neg] },
+  { exact differentiable_at_inv.mpr triv₁ },
+  { exact (differentiable_at_id'.sub_const x₀).inner (differentiable_at_id'.sub_const x₀) },
+  { refine (differentiable_at_inv.mpr _).comp _ (differentiable_at_id'.sub_const x₀).norm_sq,
+    convert triv₁,
+    rw [real_inner_self_eq_norm_sq, pow_two] },  
+  { apply_instance },
+  { refine ((differentiable_at_inv.mpr _).comp _ 
+      (differentiable_at_id'.sub_const x₀).norm_sq).const_smul _,
+    convert triv₁,
+    rw [real_inner_self_eq_norm_sq, pow_two] }
 end
 
-lemma conformal_at_inversion {E : Type*} [inner_product_space ℝ E]
-  (r : ℝ) {x : E} (hx : x ≠ 0) (x₀ : E) :
-  conformal_at (inversion r x₀) x :=
-begin
-  refine conformal_at_iff_is_conformal_map_fderiv.mpr _,
-end
+-- lemma conformal_at_inversion {E : Type*} [inner_product_space ℝ E]
+--   {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
+--   conformal_at (inversion hr x₀) x :=
+-- begin
+--   have triv₁ : 0 < (∥x - x₀∥ ^ 4)⁻¹ := inv_pos.mpr 
+--     (pow_pos (norm_pos_iff.mpr $ λ w, (sub_ne_zero.mpr hx) w) _),
+--   refine conformal_at_iff_is_conformal_map_fderiv.mpr ((is_conformal_map_iff _).mpr 
+--     ⟨r ^ 2 * (∥x - x₀∥ ^ 4)⁻¹, mul_pos (pow_pos hr _) triv₁, λ u v, _⟩),
+--   simp only [fderiv_inversion hr hx, real_inner_smul_left, real_inner_smul_right,
+--              inner_sub_left, inner_sub_right],
+--   nth_rewrite 3 real_inner_comm,
+--   nth_rewrite 4 real_inner_comm,
+--   nth_rewrite 11 real_inner_comm,
+--   simp only [mul_sub, sub_mul, add_mul, mul_add],
+--   ring,
+--   simp,
+-- end
 
 end conformality
 
