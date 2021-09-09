@@ -55,8 +55,6 @@ begin
       fderiv_sub_const, fderiv_id', fderiv_const_mul],
   simp only [pow_two, ← real_inner_self_eq_norm_sq],
   have minor₁ := differentiable_at_inv.mpr triv₁,
-  --have := fderiv.comp _ _ 
-  --((differentiable_at_id'.sub_const x₀).inner $ differentiable_at_id'.sub_const x₀),
   rw [fderiv.comp, fderiv_inv],
   simp only [add_apply, smul_right_apply, smul_apply, coe_comp', function.comp_app, one_apply,
              id_apply],
@@ -89,23 +87,62 @@ begin
     rw [real_inner_self_eq_norm_sq, pow_two] }
 end
 
--- lemma conformal_at_inversion {E : Type*} [inner_product_space ℝ E]
---   {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
---   conformal_at (inversion hr x₀) x :=
--- begin
---   have triv₁ : 0 < (∥x - x₀∥ ^ 4)⁻¹ := inv_pos.mpr 
---     (pow_pos (norm_pos_iff.mpr $ λ w, (sub_ne_zero.mpr hx) w) _),
---   refine conformal_at_iff_is_conformal_map_fderiv.mpr ((is_conformal_map_iff _).mpr 
---     ⟨r ^ 2 * (∥x - x₀∥ ^ 4)⁻¹, mul_pos (pow_pos hr _) triv₁, λ u v, _⟩),
---   simp only [fderiv_inversion hr hx, real_inner_smul_left, real_inner_smul_right,
---              inner_sub_left, inner_sub_right],
---   nth_rewrite 3 real_inner_comm,
---   nth_rewrite 4 real_inner_comm,
---   nth_rewrite 11 real_inner_comm,
---   simp only [mul_sub, sub_mul, add_mul, mul_add],
---   ring,
---   simp,
--- end
+lemma is_conformal_map_fderiv_inversion_aux {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) (v : E) :
+  ⟪fderiv ℝ (inversion hr x₀) x v, fderiv ℝ (inversion hr x₀) x v⟫ = 
+  r ^ 2 * (∥x - x₀∥ ^ 4)⁻¹ * ⟪v, v⟫ :=
+begin
+  let x' := x - x₀,
+  have this : ∥x'∥ ^ 4 ≠ 0 := 
+    pow_ne_zero 4 (ne_of_gt $ norm_pos_iff.mpr $ λ w, (sub_ne_zero.mpr hx) w),
+  simp only [← x', fderiv_inversion hr hx, real_inner_smul_left, real_inner_smul_right],
+  rw [inner_sub_left, inner_sub_right],
+  nth_rewrite 1 inner_sub_right,
+  simp only [real_inner_smul_left, real_inner_smul_right],
+  rw [real_inner_self_eq_norm_sq x', ← pow_two],
+  nth_rewrite 4 real_inner_comm,
+  ring,
+  simp only [pow_two],
+  field_simp [this],
+  ring
+end
+
+lemma is_conformal_map_fderiv_inversion_aux' {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) (u v : E) :
+  ⟪fderiv ℝ (inversion hr x₀) x u, fderiv ℝ (inversion hr x₀) x v⟫ = 
+  r ^ 2 * (∥x - x₀∥ ^ 4)⁻¹ * ⟪u, v⟫ :=
+begin
+  have minor₁ := is_conformal_map_fderiv_inversion_aux hr hx u,
+  have minor₂ := is_conformal_map_fderiv_inversion_aux hr hx v,
+  have minor₃ := is_conformal_map_fderiv_inversion_aux hr hx (u + v),
+  simp only [continuous_linear_map.map_add, inner_add_left, inner_add_right] at minor₃,
+  rw [minor₁, minor₂] at minor₃,
+  nth_rewrite 1 real_inner_comm at minor₃,
+  nth_rewrite 5 real_inner_comm at minor₃,
+  simp only [mul_add, add_assoc] at minor₃,
+  have minor₄ := add_left_cancel minor₃,
+  simp only [← add_assoc] at minor₄,
+  simpa [← mul_two] using add_right_cancel minor₄
+end
+
+lemma is_conformal_map_fderiv_inversion {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
+  is_conformal_map (fderiv ℝ (inversion hr x₀) x) :=
+begin
+  have triv₁ : 0 < (∥x - x₀∥ ^ 4)⁻¹ := inv_pos.mpr 
+    (pow_pos (norm_pos_iff.mpr $ λ w, (sub_ne_zero.mpr hx) w) _),
+  exact conformal_at_iff_is_conformal_map_fderiv.mpr ((is_conformal_map_iff _).mpr 
+    ⟨r ^ 2 * (∥x - x₀∥ ^ 4)⁻¹, mul_pos (pow_pos hr _) triv₁, 
+    is_conformal_map_fderiv_inversion_aux' hr hx⟩)
+end
+
+
+lemma conformal_at_inversion {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
+  conformal_at (inversion hr x₀) x :=
+conformal_at_iff_is_conformal_map_fderiv.mpr (is_conformal_map_fderiv_inversion hr hx)
+
+lemma similarity_factor_inversion
 
 end conformality
 
