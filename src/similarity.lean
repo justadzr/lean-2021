@@ -38,13 +38,22 @@ begin
   rw [key, lie.apply_symm_apply, smul_smul, mul_inv_cancel hc, one_smul]
 end
 
+lemma conformal_at.symm {X Y : Type*} 
+  [normed_group X] [normed_group Y] [normed_space ℝ X] [normed_space ℝ Y]
+  {f : local_homeomorph X Y} {x : X} (hx : x ∈ f.source) 
+  (hf : conformal_at f x) (hf' : function.surjective (fderiv ℝ f x)) :
+  conformal_at f.symm (f x) :=
+begin
+  refine conformal_at_iff_is_conformal_map_fderiv.mpr _,
+end
+
 end conformality
 
-section similarity_all
+section conformality_all
 
 variables {E F : Type*} [inner_product_space ℝ E] [inner_product_space ℝ F]
 
-section similarity1
+section conformality1
 
 def conformal_factor {f' : E →L[ℝ] F} (h : is_conformal_map f') : ℝ :=
 classical.some ((is_conformal_map_iff _).mp h)
@@ -94,9 +103,9 @@ begin
   exact times_cont_diff_at.comp _ (apply ℝ F v).times_cont_diff.times_cont_diff_at H
 end
 
-end similarity1
+end conformality1
 
-section similarity2
+section conformality2
 
 def conformal_factor_sqrt {f' : E →L[ℝ] F} (h : is_conformal_map f') : ℝ :=
 real.sqrt (conformal_factor h)
@@ -138,9 +147,9 @@ lemma conformal_factor_sqrt_eq_of_eq [nontrivial E]
   conformal_factor_sqrt (is_conformal_map_of_eq hf' H) = conformal_factor_sqrt hf' :=
 by simp only [conformal_factor_sqrt, conformal_factor_eq_of_eq]
 
-end similarity2
+end conformality2
 
-section similarity3
+section conformality3
 
 def conformal_factor_sqrt_inv {f' : E →L[ℝ] F} (h : is_conformal_map f') : ℝ :=
 (conformal_factor_sqrt h)⁻¹
@@ -213,11 +222,11 @@ begin
   rw [conformal_factor_sqrt_eq' (h x), neg_mul_comm]
 end
 
-end similarity3
+end conformality3
 
-end similarity_all
+end conformality_all
 
-section similarity_arithmetic
+section conformality_arithmetic
 
 variables {E F G : Type*} 
   [inner_product_space ℝ G] [inner_product_space ℝ E] [inner_product_space ℝ F]
@@ -234,6 +243,19 @@ begin
   exact mul_right_cancel' (λ w, hu $ inner_self_eq_zero.mp w) this
 end
 
+lemma conformal_factor_sqrt_comp [nontrivial E] {f' : E →L[ℝ] F} {f'' : F →L[ℝ] G}
+  (hf' : is_conformal_map f') (hf'' : is_conformal_map f'') :
+  conformal_factor_sqrt (hf''.comp hf') = 
+  (conformal_factor_sqrt hf'') * (conformal_factor_sqrt hf') :=
+by simp only [conformal_factor_sqrt, conformal_factor_comp hf' hf'', 
+  real.sqrt_mul' _ (le_of_lt (conformal_factor_prop hf').1)]
+
+lemma conformal_factor_sqrt_inv_comp [nontrivial E] {f' : E →L[ℝ] F} {f'' : F →L[ℝ] G}
+  (hf' : is_conformal_map f') (hf'' : is_conformal_map f'') :
+  conformal_factor_sqrt_inv (hf''.comp hf') = 
+  (conformal_factor_sqrt_inv hf'') * (conformal_factor_sqrt_inv hf') :=
+by simp only [conformal_factor_sqrt_inv, conformal_factor_sqrt_comp hf' hf'', mul_inv']
+
 lemma conformal_factor_symm [nontrivial E] {f' : E ≃L[ℝ] F} 
   (hf' : is_conformal_map (f' : E →L[ℝ] F)) : 
   conformal_factor hf' = (conformal_factor hf'.symm)⁻¹ :=
@@ -247,7 +269,17 @@ begin
   exact ((mul_eq_one_iff_inv_eq' $ ne_of_gt (conformal_factor_prop hf'.symm).1).mp key).symm
 end
 
-end similarity_arithmetic
+lemma conformal_factor_sqrt_symm [nontrivial E] {f' : E ≃L[ℝ] F} 
+  (hf' : is_conformal_map (f' : E →L[ℝ] F)) :
+  conformal_factor_sqrt hf' = (conformal_factor_sqrt hf'.symm)⁻¹ :=
+by rw [conformal_factor_sqrt, conformal_factor_symm hf', real.sqrt_inv, ← conformal_factor_sqrt]
+
+lemma conformal_factor_sqrt_inv_symm [nontrivial E] {f' : E ≃L[ℝ] F} 
+  (hf' : is_conformal_map (f' : E →L[ℝ] F)) :
+  conformal_factor_sqrt_inv hf' = (conformal_factor_sqrt_inv hf'.symm)⁻¹ :=
+by rw [conformal_factor_sqrt_inv, conformal_factor_sqrt_symm hf', ← conformal_factor_sqrt_inv]
+
+end conformality_arithmetic
 
 section conformal_inversion
 
@@ -256,6 +288,7 @@ def inversion {X : Type*} [normed_group X] [normed_space ℝ X]
   {r : ℝ} (hr : 0 < r) (x₀ : X) : X → X := 
 λ x, x₀ + (r * (∥x - x₀∥ ^ 2)⁻¹) • (x - x₀)
 
+/-- Do we need this `≠` condition as `0⁻¹ = 0` in Lean? -/
 lemma fderiv_inversion {X : Type*} [inner_product_space ℝ X] 
   {r : ℝ} (hr : 0 < r) {x₀ : X} {y x : X} (hx : x ≠ x₀) : 
   fderiv ℝ (inversion hr x₀) x y = r • (∥x - x₀∥ ^ 4)⁻¹ • 
@@ -314,7 +347,7 @@ begin
   simp only [real_inner_smul_left, real_inner_smul_right],
   rw [real_inner_self_eq_norm_sq x', ← pow_two],
   nth_rewrite 4 real_inner_comm,
-  ring,
+  ring_nf,
   simp only [pow_two],
   field_simp [this],
   ring
@@ -353,15 +386,85 @@ lemma conformal_at_inversion {E : Type*} [inner_product_space ℝ E]
   conformal_at (inversion hr x₀) x :=
 conformal_at_iff_is_conformal_map_fderiv.mpr (is_conformal_map_fderiv_inversion hr hx)
 
-lemma conformal_factor_inversion {E : Type*} [inner_product_space ℝ E] [nontrivial E]
+lemma conformal_factor_inversion {E : Type*} [inner_product_space ℝ E]
   {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
   conformal_factor (is_conformal_map_fderiv_inversion hr hx) = r ^ 2 * (∥x - x₀∥ ^ 4)⁻¹ :=
 begin
+  haveI : nontrivial E := nontrivial_of_ne x x₀ hx,
   rcases exists_ne (0 : E) with ⟨u, hu⟩,
   have triv : ⟪u, u⟫ ≠ 0 := λ w, hu (inner_self_eq_zero.mp w),
   have key := (conformal_factor_prop $ is_conformal_map_fderiv_inversion hr hx).2 u u,
   rw is_conformal_map_fderiv_inversion_aux' hr hx at key,
   exact (mul_right_cancel' triv key).symm
 end
+
+lemma conformal_factor_sqrt_inversion {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
+  conformal_factor_sqrt (is_conformal_map_fderiv_inversion hr hx) = r * (∥x - x₀∥ ^ 2)⁻¹ :=
+begin
+  have : ∥x - x₀∥ ^ 4 = (∥x - x₀∥ ^ 2) ^ 2,
+  { simp only [← pow_mul],
+    norm_num },
+  rw [conformal_factor_sqrt, conformal_factor_inversion hr hx],
+  simp [this, real.sqrt_sq (sq_nonneg _), real.sqrt_sq (le_of_lt hr)]
+end
+
+lemma conformal_factor_sqrt_inv_inversion {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x x₀ : E} (hx : x ≠ x₀) :
+  conformal_factor_sqrt_inv (is_conformal_map_fderiv_inversion hr hx) = r⁻¹ * ∥x - x₀∥ ^ 2 :=
+by rw [conformal_factor_sqrt_inv, conformal_factor_sqrt_inversion hr hx, mul_inv', inv_inv']
+
+lemma continuous_on_inversion {E : Type*} [inner_product_space ℝ E]
+  {r : ℝ} (hr : 0 < r) {x₀ : E} {s : set E} (hs : x₀ ∉ s) : continuous_on (inversion hr x₀) s :=
+begin
+  rw inversion,
+  simp only [← smul_smul],
+  refine (continuous_on_const).add (continuous_on.const_smul 
+    (continuous_on.smul _ $ continuous_on_id.sub continuous_on_const) _),
+  exact continuous_on.inv' ((continuous_on.norm $ continuous_on_id.sub continuous_on_const).pow 2) 
+    (λ x hx w, (ne_of_mem_of_not_mem hx hs) $ sub_eq_zero.mp $ norm_eq_zero.mp $ pow_eq_zero w)
+end
+
+-- lemma inversion_local_homeomorph {E : Type*} [inner_product_space ℝ E]
+--   {r : ℝ} (hr : 0 < r) {x₀ : E} {s : set E} (hs : x₀ ∉ s) : local_homeomorph E E :=
+-- { to_fun := inversion hr x₀,
+--   inv_fun := inversion hr x₀,
+--   source := s,
+--   target := (inversion hr x₀) '' s,
+--   map_source' := λ x hx, set.mem_image_of_mem _ hx,
+--   map_target' := _,
+--   left_inv' := _,
+--   right_inv' := _,
+--   open_source := _,
+--   open_target := _,
+--   continuous_to_fun := _,
+--   continuous_inv_fun := _ }
+
+-- { to_fun := inversion hr x₀,
+--   inv_fun := inversion hr x₀,
+--   left_inv := λ x, begin
+--     by_cases hx : x = x₀,
+--     { simp [inversion, hx] },
+--     { have : ∥x - x₀∥ ≠ 0 := λ w, hx (sub_eq_zero.mp $ norm_eq_zero.mp w),
+--       simp only [inversion, congr_arg, add_sub_cancel'],
+--       simp only [norm_smul, smul_smul, ← smul_eq_mul, real.norm_of_nonneg (le_of_lt hr)],
+--       simp only [real.norm_of_nonneg (inv_nonneg.mpr $ sq_nonneg _), smul_eq_mul],
+--       simp only [← inv_pow', mul_inv', inv_inv', pow_two],
+--       ring_nf,
+--       field_simp [this, pow_ne_zero 2 (ne_of_gt hr)] }    
+--   end,
+--   right_inv := λ x, begin
+--     by_cases hx : x = x₀,
+--     { simp [inversion, hx] },
+--     { have : ∥x - x₀∥ ≠ 0 := λ w, hx (sub_eq_zero.mp $ norm_eq_zero.mp w),
+--       simp only [inversion, congr_arg, add_sub_cancel'],
+--       simp only [norm_smul, smul_smul, ← smul_eq_mul, real.norm_of_nonneg (le_of_lt hr)],
+--       simp only [real.norm_of_nonneg (inv_nonneg.mpr $ sq_nonneg _), smul_eq_mul],
+--       simp only [← inv_pow', mul_inv', inv_inv', pow_two],
+--       ring_nf,
+--       field_simp [this, pow_ne_zero 2 (ne_of_gt hr)] }    
+--   end,
+--   continuous_to_fun := _,
+--   continuous_inv_fun := _ }
 
 end conformal_inversion
